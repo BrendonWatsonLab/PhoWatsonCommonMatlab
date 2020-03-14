@@ -21,6 +21,7 @@ title('Region Intensity');
 xlim([frameIndexes(1), frameIndexes(end)]);
 % svp.DataPlot.dualCursor = dualcursor;
 dualcursor on;
+dualcursor('onlyOneCursor');
 
 % Video Player
 % vidPlayCallbacks.PreFrameUpdate = @(~,~) disp('Pre Frame changed!');
