@@ -37,6 +37,7 @@ set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883])
 
 %% Get the info about the loaded video:
 %vidPlayer.DataSource.Controls.CurrentFrame
+svp.vidInfo.frameIndexes = frameIndexes;
 svp.vidInfo.vidPlaySourceType = svp.vidPlayer.DataSource.Type;
 if svp.vidInfo.vidPlaySourceType == "Workspace"
     % Loaded from a workspace variable!
@@ -88,15 +89,17 @@ function output_txt = slider_post_update_function(src, event_obj)
     % Get the frame from the slider:
 %     updatedFrame = get(event_obj,'NewValue');
 
-    updatedFrame = round(event_obj.AffectedObject.Value);
+    % the slider is the frame number from 1 - length, not the currently loaded indexes
+    slider_frame = round(event_obj.AffectedObject.Value);
 
     %updatedFrame = get(svp.Slider,'Value');
 %     disp(updatedFrame);
     % Jump to frame:
 %     h = findobj('Tag','slider1');
     global svp;
-    svp.vidPlayer.DataSource.Controls.jumpTo(updatedFrame); % Update the video frame
-    
-    dualcursor([1 updatedFrame]);
+    svp.vidPlayer.DataSource.Controls.jumpTo(slider_frame); % Update the video frame
+    final_frame = svp.vidInfo.frameIndexes(1) + slider_frame;
+%     dualcursor([1 updatedFrame]);
+    dualcursor([final_frame final_frame]);
 %     datacursor update;
 end

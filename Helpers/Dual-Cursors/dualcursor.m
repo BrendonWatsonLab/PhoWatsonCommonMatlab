@@ -554,11 +554,11 @@ switch state
                 [xv,yv]=local_nearest(x,xl,yl);
                 
                 % xv will be the new x position we move to:
-%                 global svp;
-% %                 updatedFrame = round(event_obj.AffectedObject.Value);
-% %                 svp.vidPlayer.DataSource.Controls.jumpTo(updatedFrame); % Update the video frame
-% 
-%                 svp.Slider.Value = round(xv);
+                global svp;
+%                 updatedFrame = round(event_obj.AffectedObject.Value);
+%                 svp.vidPlayer.DataSource.Controls.jumpTo(updatedFrame); % Update the video frame
+
+                svp.Slider.Value = round(xv);
                 
                 
                 %If we are moving a cursor, must move the cursor number label, too
