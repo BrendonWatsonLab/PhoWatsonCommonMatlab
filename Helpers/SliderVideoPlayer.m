@@ -41,7 +41,7 @@ svp.vidInfo.vidPlaySourceType = svp.vidPlayer.DataSource.Type;
 if svp.vidInfo.vidPlaySourceType == "Workspace"
     % Loaded from a workspace variable!
     svp.vidInfo.vidPlaySourceWorkspaceVariableName = svp.vidPlayer.DataSource.Name;
-    vidPlaySourceWorkspaceVariableValue = eval(vidPlaySourceWorkspaceVariableName);
+    vidPlaySourceWorkspaceVariableValue = eval(svp.vidInfo.vidPlaySourceWorkspaceVariableName);
     svp.vidInfo.numFrames = length(vidPlaySourceWorkspaceVariableValue);
     svp.vidInfo.currentPlaybackFrame = svp.vidPlayer.DataSource.Controls.CurrentFrame;
 else
