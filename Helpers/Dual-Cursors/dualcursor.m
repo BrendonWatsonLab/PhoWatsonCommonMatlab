@@ -432,6 +432,8 @@ switch state
         setappdata(axh,'Color',color);
 
         s = warning('off','MATLAB:modes:mode:InvalidPropertySet');
+        
+        % Sets the window's button down function to be the dualcursor function with the 'down' argument passsed.
         set(hFig,'WindowButtonDownFcn','dualcursor(''down'',[],[],[],get(gco,''Parent''))')
         warning(s)
         set(hFig,'DoubleBuffer','on');       %eliminate flicker
@@ -454,6 +456,7 @@ switch state
         %If it's a movable object (Cursor, CursorText label, or Cursor Delta Text label), make it movable.
         if strcmp(tag,'CursorText') | strcmp(tag,'Cursor') | strcmp(tag,'CursorDeltaText')
 %             set(gco,'EraseMode','xor')
+            % On moving within the current axis, call the dualcusor('move',...) function.
             set(gcf,'WindowButtonMotionFcn','dualcursor(''move'',[],[],[],get(gco,''Parent''))', ...
                 'WindowButtonUpFcn','dualcursor(''up'',[],[],[],get(gco,''Parent''))');
         end
@@ -495,6 +498,7 @@ switch state
         end
 
     case 'move'          % Execute the WindowButtonMotionFcn
+        % Called when the mouse is moved within the cursor after the 'down' event has been triggered by a mouse button down.
         htype = get(gco,'Type');
         tag = get(gco,'Tag');
         if ~isempty(gco)
@@ -546,11 +550,17 @@ switch state
                 xl = get(lh,'XData');
                 yl = get(lh,'YData');
 
-
                 %Get nearest value
                 [xv,yv]=local_nearest(x,xl,yl);
-
-
+                
+                % xv will be the new x position we move to:
+%                 global svp;
+% %                 updatedFrame = round(event_obj.AffectedObject.Value);
+% %                 svp.vidPlayer.DataSource.Controls.jumpTo(updatedFrame); % Update the video frame
+% 
+%                 svp.Slider.Value = round(xv);
+                
+                
                 %If we are moving a cursor, must move the cursor number label, too
                 if strcmp(tag,'Cursor')
                     %Move the Cursor Number label, too
@@ -588,7 +598,7 @@ switch state
                 end
 
 
-                deltah = getappdata(axh,'Delta_Handle');    %Handle to cursors
+                deltah = getappdata(axh,'Delta_Handle');    %Handle to delta objects
 
                 %Positions of two dualcursors
                 xy1 = getappdata(cursors(1),'Coordinates');
