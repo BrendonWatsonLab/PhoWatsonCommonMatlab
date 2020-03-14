@@ -4,18 +4,33 @@
 global svp;
 
 % svp: SliderVideoPlayer
-svpSettings.sliderWidth = 500;
-svpSettings.sliderHeight = 23;
-svpSettings.sliderX = 10;
-svpSettings.sliderY = 50;
+% svpSettings.sliderWidth = 100;
+% svpSettings.sliderHeight = 23;
+% svpSettings.sliderX = 0;
+% svpSettings.sliderY = 40;
 svpSettings.sliderMajorStep = 0.01;
 svpSettings.sliderMinorStep = 0.1;
+
+
+%% Plot Window:
+svp.DataPlot.fig = figure(1);
+clf
+svp.DataPlot.plotH = plot(frameIndexes, region_mean_per_frame_smoothed);
+xlabel('Frame Index');
+title('Region Intensity');
+xlim([frameIndexes(1), frameIndexes(end)]);
+% svp.DataPlot.dualCursor = dualcursor;
+dualcursor on;
 
 % Video Player
 % vidPlayCallbacks.PreFrameUpdate = @(~,~) disp('Pre Frame changed!');
 % vidPlayCallbacks.PostFrameUpdate = @(~,~) disp('Post Frame changed!');
 
 svp.vidPlayer = implay(greyscale_frames, v.FrameRate);
+spawnPosition = svp.vidPlayer.Parent.Position;
+set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883])
+%set(svp.vidPlayer.Parent, 'Position',  [spawnPosition(1), spawnPosition(2), 867, 883])
+
 % svp.vidPlayer.resi
 % svp.vidPlayer.addlistener(vidPlayCallbacks.FrameUpdate);
 
@@ -41,12 +56,19 @@ end
 % PreCallBack = @(~,~) disp('Pause the video here');
 % PostCallBack = @(~,~)disp('Play the video here');
 % svp.Figure = figure();
+% Gets the slider position from the video player
+svpSettings.sliderWidth = svp.vidPlayer.Parent.Position(3) - 20;
+svpSettings.sliderHeight = 23;
+svpSettings.sliderX = 5;
+svpSettings.sliderY = 40;
 
 % svp.Slider = uicontrol(svp.Figure,'Style','slider',...
 svp.Slider = uicontrol(svp.vidPlayer.Parent,'Style','slider',...
                 'Min',0,'Max',svp.vidInfo.numFrames,'Value',1,...
                 'SliderStep',[svpSettings.sliderMinorStep svpSettings.sliderMajorStep],...
                 'Position', [svpSettings.sliderX,svpSettings.sliderY,svpSettings.sliderWidth,svpSettings.sliderHeight]);
+          
+svp.Slider.Units = "normalized";
 addlistener(svp.Slider, 'Value', 'PostSet', @slider_post_update_function);
 % addlistener(SliderVideoPlayerSettings.Slider, 'Value', 'PreSet', slider_pre_update_function);
 
@@ -68,9 +90,12 @@ function output_txt = slider_post_update_function(src, event_obj)
     updatedFrame = round(event_obj.AffectedObject.Value);
 
     %updatedFrame = get(svp.Slider,'Value');
-    disp(updatedFrame);
+%     disp(updatedFrame);
     % Jump to frame:
 %     h = findobj('Tag','slider1');
     global svp;
-    svp.vidPlayer.DataSource.Controls.jumpTo(updatedFrame);
+    svp.vidPlayer.DataSource.Controls.jumpTo(updatedFrame); % Update the video frame
+    
+    dualcursor([1 updatedFrame]);
+%     datacursor update;
 end
