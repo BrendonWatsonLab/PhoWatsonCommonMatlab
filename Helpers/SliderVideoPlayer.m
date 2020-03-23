@@ -115,14 +115,50 @@ end
     
     %% Ready to work:
     svp.vidToolbar = findobj(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_Playback');
-    playbtn = svp.vidToolbar.Children(7);
-    svp.backupCallbacks.playbtn = playbtn.ClickedCallback;
+    
+%     playbtn = svp.vidToolbar.Children(7);
+%     btnPlay = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_Play');
+%     btnAutoReverse = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_AutoReverse');
+    btnJumpTo = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_JumpTo');
+    btnGotoEnd = findobj(svp.vidToolbar.Children,'Tag','uimgr.uipushtool_GotoEnd');
+    btnStepFwd = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_StepFwd');
+    btnFFwd = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_FFwd');
+    btnPlayPause = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_Play');
+    btnStop = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_Stop');
+    btnRewind = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_Rewind');
+    btnStepBack = findobj(svp.vidToolbar.Children,'Tag','uimgr.uipushtool_StepBack');
+    btnGotoStart = findobj(svp.vidToolbar.Children,'Tag','uimgr.spcpushtool_GotoStart');
+    
+%     buttonNames = {"btnJumpTo","btnGotoEnd","btnStepFwd","btnFFwd","btnPlayPause","btnStop","btnRewind","btnStepBack","btnGotoStart"};
+%     buttonCallbacks = {"video_player_btn_JumpTo_callback","video_player_btn_GotoEnd_callback","video_player_btn_StepFwd_callback","video_player_btn_FFwd_callback","video_player_btn_playPause_callback","video_player_btn_Stop_callback","video_player_btn_Rewind_callback","video_player_btn_StepBack_callback","video_player_btn_GotoStart_callback"};
+%     
+    buttonNames = {"btnJumpTo","btnGotoEnd","btnStepFwd","btnFFwd","btnPlayPause","btnStop","btnRewind","btnStepBack","btnGotoStart"};
+    buttonObjs = {btnJumpTo,btnGotoEnd,btnStepFwd,btnFFwd,btnPlayPause,btnStop,btnRewind,btnStepBack,btnGotoStart};
+%     buttonCallbacks = {video_player_btn_JumpTo_callback,video_player_btn_GotoEnd_callback,video_player_btn_StepFwd_callback,video_player_btn_FFwd_callback,video_player_btn_playPause_callback,video_player_btn_Stop_callback,video_player_btn_Rewind_callback,video_player_btn_StepBack_callback,video_player_btn_GotoStart_callback};
+    buttonCallbacks = {@(hco,ev) video_player_btn_JumpTo_callback(hco,ev); , @(hco,ev)video_player_btn_GotoEnd_callback(hco,ev); , @(hco,ev)video_player_btn_StepFwd_callback(hco,ev); , @(hco,ev)video_player_btn_FFwd_callback(hco,ev); , @(hco,ev)video_player_btn_playPause_callback(hco,ev); , @(hco,ev)video_player_btn_Stop_callback(hco,ev); , @(hco,ev)video_player_btn_Rewind_callback(hco,ev); , @(hco,ev)video_player_btn_StepBack_callback(hco,ev); , @(hco,ev)video_player_btn_GotoStart_callback(hco,ev);};
+    
+    
+    % Backup the original callback functions.
+    for btnIndex = 1:length(buttonNames)
+       curr_button_obj = buttonObjs{btnIndex};
+       svp.backupCallbacks.(buttonNames{btnIndex}) = curr_button_obj.ClickedCallback;
+    end
+    
+    
+    
+    % 'uimgr.spcpushtool_JumpTo'
+    
+    % 'uimgr.spcpushtool_Play'
+    % 
+%     svp.backupCallbacks.btnPlayPause = btnPlayPause.ClickedCallback;
+%     svp.backupCallbacks.btnPlayPause = btnPlayPause.ClickedCallback;
 
 
 %     
-    vidPlayCallbacks.PauseButtonCallback = @(hco,ev) disp('Pause!');
-    vidPlayCallbacks.PlayButtonCallback = @(hco,ev) video_player_btn_play_callback(hco,ev);
-    vidPlayCallbacks.StopButtonCallback = @(hco,ev) disp('Stop!');
+%     vidPlayCallbacks.PauseButtonCallback = @(hco,ev) disp('Pause!');
+%     vidPlayCallbacks.PlayPauseButtonCallback = @(hco,ev) video_player_btn_playPause_callback(hco,ev);
+%     vidPlayCallbacks.StopButtonCallback = @(hco,ev) disp('Stop!');
+    
 %     vidPlayCallbacks.PlaybackMenuCallback = @(~,~) disp('Playback menu callback!!');
 %     vidPlayCallbacks.LoadedCallback = @(~,~) disp('Loaded callback!!');
 %     
@@ -144,8 +180,15 @@ end
 %     'playPause'
     % svp.vidPlayer.addlistener(vidPlayCallbacks.FrameUpdate);
 
-    playbtn.ClickedCallback = vidPlayCallbacks.PlayButtonCallback;
+%     btnPlayPause.ClickedCallback = vidPlayCallbacks.PlayPauseButtonCallback;
         
+    for btnIndex = 1:length(buttonNames)
+%         curr_button_callback_fn = eval(buttonCallbacks{btnIndex});
+        curr_button_callback_fn = buttonCallbacks{btnIndex};
+        curr_button_obj = buttonObjs{btnIndex};
+        curr_button_obj.ClickedCallback = @(hco,ev) curr_button_callback_fn(hco,ev);
+    end
+    
     %% Get the info about the loaded video:
     %vidPlayer.DataSource.Controls.CurrentFrame
     svp.vidInfo.frameIndexes = svpConfig.DataPlot.x;
@@ -197,13 +240,89 @@ end
 % 
 %     end
 
-% Called when the play button is clicked in the video GUI.
-    function video_player_btn_play_callback(hco, ev)
-        disp('play button callback hit!');
-        svp.backupCallbacks.playbtn(hco, ev);
+
+%% Button Callbacks: buttonNames = {"btnJumpTo","btnGotoEnd","btnStepFwd","btnFFwd","btnPlayPause","btnStop","btnRewind","btnStepBack","btnGotoStart"};
+% buttonCallbacks = {"video_player_btn_JumpTo_callback","video_player_btn_GotoEnd_callback","video_player_btn_StepFwd_callback","video_player_btn_FFwd_callback","video_player_btn_playPause_callback","video_player_btn_Stop_callback","video_player_btn_Rewind_callback","video_player_btn_StepBack_callback","video_player_btn_GotoStart_callback"};
+% Called when the corresponding button is clicked in the video GUI.
+    function video_player_btn_JumpTo_callback(hco, ev)
+        disp('jump to button callback hit!');
+        svp.backupCallbacks.btnJumpTo(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_GotoEnd_callback(hco, ev)
+        disp('btnGotoEnd callback hit!');
+        svp.backupCallbacks.btnGotoEnd(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_StepFwd_callback(hco, ev)
+        disp('btnStepFwd callback hit!');
+        svp.backupCallbacks.btnStepFwd(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_FFwd_callback(hco, ev)
+        disp('btnFFwd callback hit!');
+        svp.backupCallbacks.btnFFwd(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_playPause_callback(hco, ev)
+        disp('play/pause button callback hit!');
+        svp.backupCallbacks.btnPlayPause(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_Stop_callback(hco, ev)
+        disp('stop button callback hit!');
+        svp.backupCallbacks.btnStop(hco, ev);
+        update_controls_from_video_playback();
     end
 
 
+    function video_player_btn_Rewind_callback(hco, ev)
+        disp('btnRewind callback hit!');
+        svp.backupCallbacks.btnRewind(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_StepBack_callback(hco, ev)
+        disp('btnStepBack callback hit!');
+        svp.backupCallbacks.btnStepBack(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+    function video_player_btn_GotoStart_callback(hco, ev)
+        disp('btnGotoStart callback hit!');
+        svp.backupCallbacks.btnGotoStart(hco, ev);
+        update_controls_from_video_playback();
+    end
+
+%% Helper Functions:
+    function slider_frame = video_player_frame_to_slider_frame(video_frame)
+       slider_frame = video_frame - svp.vidInfo.frameIndexes(1);
+    end
+
+    function video_frame = slider_frame_to_video_frame(slider_frame)
+        video_frame = svp.vidInfo.frameIndexes(1) + slider_frame;
+    end
+
+    function curr_video_frame = get_video_frame()
+        curr_video_frame = svp.vidPlayer.DataSource.Controls.CurrentFrame;        
+    end
+
+    function update_controls_from_video_playback()
+        % Updates the slider and the plot (if it exists) from the current video frame.
+        curr_video_frame = get_video_frame();
+        curr_slider_frame = video_player_frame_to_slider_frame(curr_video_frame);
+        svp.Slider.Value = curr_slider_frame; % Set the slider to the video frame
+        if (svpSettings.shouldShowPairedFigure)
+            dualcursor([curr_video_frame curr_video_frame]);
+        end
+    end
+
+%% Other UI Callbacks:
     function slider_post_update_function(~, event_obj)
         % ~            Currently not used (empty)
         % event_obj    Object containing event data structure
