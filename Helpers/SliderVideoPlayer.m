@@ -213,70 +213,61 @@ end
 
     svp.Slider.Units = "normalized"; %Change slider units to normalized so that it scales with the video window.
     addlistener(svp.Slider, 'Value', 'PostSet', @slider_post_update_function);
-    % addlistener(SliderVideoPlayerSettings.Slider, 'Value', 'PreSet', slider_pre_update_function);
 
-%     function slider_pre_update_function(src, event_obj)
-%         % ~            Currently not used (empty)
-%         % event_obj    Object containing event data structure
-%         % Pause the video here:
-% 
-%     end
 
 
 %% Button Callbacks: buttonNames = {"btnJumpTo","btnGotoEnd","btnStepFwd","btnFFwd","btnPlayPause","btnStop","btnRewind","btnStepBack","btnGotoStart"};
-% buttonCallbacks = {"video_player_btn_JumpTo_callback","video_player_btn_GotoEnd_callback","video_player_btn_StepFwd_callback","video_player_btn_FFwd_callback","video_player_btn_playPause_callback","video_player_btn_Stop_callback","video_player_btn_Rewind_callback","video_player_btn_StepBack_callback","video_player_btn_GotoStart_callback"};
 % Called when the corresponding button is clicked in the video GUI.
     function video_player_btn_JumpTo_callback(hco, ev)
-        disp('jump to button callback hit!');
+%         disp('jump to button callback hit!');
         svp.backupCallbacks.btnJumpTo(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_GotoEnd_callback(hco, ev)
-        disp('btnGotoEnd callback hit!');
+%         disp('btnGotoEnd callback hit!');
         svp.backupCallbacks.btnGotoEnd(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_StepFwd_callback(hco, ev)
-        disp('btnStepFwd callback hit!');
+%         disp('btnStepFwd callback hit!');
         svp.backupCallbacks.btnStepFwd(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_FFwd_callback(hco, ev)
-        disp('btnFFwd callback hit!');
+%         disp('btnFFwd callback hit!');
         svp.backupCallbacks.btnFFwd(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_playPause_callback(hco, ev)
-        disp('play/pause button callback hit!');
+%         disp('play/pause button callback hit!');
         svp.backupCallbacks.btnPlayPause(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_Stop_callback(hco, ev)
-        disp('stop button callback hit!');
+%         disp('stop button callback hit!');
         svp.backupCallbacks.btnStop(hco, ev);
         update_controls_from_video_playback();
     end
 
-
     function video_player_btn_Rewind_callback(hco, ev)
-        disp('btnRewind callback hit!');
+%         disp('btnRewind callback hit!');
         svp.backupCallbacks.btnRewind(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_StepBack_callback(hco, ev)
-        disp('btnStepBack callback hit!');
+%         disp('btnStepBack callback hit!');
         svp.backupCallbacks.btnStepBack(hco, ev);
         update_controls_from_video_playback();
     end
 
     function video_player_btn_GotoStart_callback(hco, ev)
-        disp('btnGotoStart callback hit!');
+%         disp('btnGotoStart callback hit!');
         svp.backupCallbacks.btnGotoStart(hco, ev);
         update_controls_from_video_playback();
     end
