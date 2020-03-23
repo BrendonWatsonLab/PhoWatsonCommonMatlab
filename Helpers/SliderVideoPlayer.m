@@ -144,26 +144,9 @@ end
        svp.backupCallbacks.(buttonNames{btnIndex}) = curr_button_obj.ClickedCallback;
     end
     
-    
-    
-    % 'uimgr.spcpushtool_JumpTo'
-    
-    % 'uimgr.spcpushtool_Play'
-    % 
-%     svp.backupCallbacks.btnPlayPause = btnPlayPause.ClickedCallback;
-%     svp.backupCallbacks.btnPlayPause = btnPlayPause.ClickedCallback;
-
-
-%     
-%     vidPlayCallbacks.PauseButtonCallback = @(hco,ev) disp('Pause!');
-%     vidPlayCallbacks.PlayPauseButtonCallback = @(hco,ev) video_player_btn_playPause_callback(hco,ev);
-%     vidPlayCallbacks.StopButtonCallback = @(hco,ev) disp('Stop!');
-    
 %     vidPlayCallbacks.PlaybackMenuCallback = @(~,~) disp('Playback menu callback!!');
 %     vidPlayCallbacks.LoadedCallback = @(~,~) disp('Loaded callback!!');
-%     
-%     playbtn.ClickedCallback = vidPlayCallbacks.PlayButtonCallback;
-    
+
 %     svp.vidPlayer.playbackMenuCallback = vidPlayCallbacks.PlaybackMenuCallback;
 %     svp.vidPlayer.addlistener(vidPlayCallbacks.FrameUpdate);
 %     addlistener(svp.Slider, 'Value', 'PostSet', @slider_post_update_function);
@@ -183,7 +166,6 @@ end
 %     btnPlayPause.ClickedCallback = vidPlayCallbacks.PlayPauseButtonCallback;
         
     for btnIndex = 1:length(buttonNames)
-%         curr_button_callback_fn = eval(buttonCallbacks{btnIndex});
         curr_button_callback_fn = buttonCallbacks{btnIndex};
         curr_button_obj = buttonObjs{btnIndex};
         curr_button_obj.ClickedCallback = @(hco,ev) curr_button_callback_fn(hco,ev);
@@ -301,11 +283,14 @@ end
 
 %% Helper Functions:
     function slider_frame = video_player_frame_to_slider_frame(video_frame)
-       slider_frame = video_frame - svp.vidInfo.frameIndexes(1);
+        % Video frame is in the range [1,...numVideoFrames]
+       relative_frame_offset = (svp.vidInfo.frameIndexes(1) - 1); % The offset is how far the first frame is from one. 
+       slider_frame = video_frame - relative_frame_offset;
     end
 
     function video_frame = slider_frame_to_video_frame(slider_frame)
-        video_frame = svp.vidInfo.frameIndexes(1) + slider_frame;
+        relative_frame_offset = (svp.vidInfo.frameIndexes(1) - 1); % The offset is how far the first frame is from one. 
+        video_frame = relative_frame_offset + slider_frame;
     end
 
     function curr_video_frame = get_video_frame()
