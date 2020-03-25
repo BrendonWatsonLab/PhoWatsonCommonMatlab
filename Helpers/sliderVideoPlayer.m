@@ -3,7 +3,7 @@ function [svp, svpSettings] = sliderVideoPlayer(svpConfig)
 %   Pho Hale, 3/17/2020
 
 global svp;
-global svpConfig;
+% global svpConfig;
 
 %% Input Argument Parsing:
 % defaultHeight = 1;
@@ -39,7 +39,7 @@ global svpConfig;
 
 if ~exist('svpConfig','var')
    disp("No svpConfig specified! Trying to build one from workspace!")
-   svpConfig.DataPlot.x = frameIndexes;
+   svpConfig.DataPlot.x = curr_dynamic_output.frameIndexes;
    
    % Try to find 'v' VideoReader object.
    if ~exist('v','var')
@@ -170,6 +170,45 @@ end
         curr_button_obj = buttonObjs{btnIndex};
         curr_button_obj.ClickedCallback = @(hco,ev) curr_button_callback_fn(hco,ev);
     end
+    
+    %% Add a Custom Toolbar to allow marking frames
+    svp.vidCustomToolbar = uitoolbar(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_PhoCustom');
+    
+    btnMarkBad = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkBad');
+    [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','plottype-hist3.gif'));
+    ptImage = ind2rgb(img,map);
+    btnMarkBad.CData = ptImage;
+    btnMarkBad.Tooltip = 'Mark current frame bad';
+    btnMarkBad.ClickedCallback = @video_player_btn_MarkBad_callback;
+
+    
+    btn_LogFrame = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_LogFrame');
+    [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','notesicon.gif'));
+    ptImage = ind2rgb(img,map);
+    btn_LogFrame.CData = ptImage;
+    btn_LogFrame.Tooltip = 'Log current frame out to command window';
+    btn_LogFrame.ClickedCallback = @video_player_btn_LogFrame_callback;
+    
+    % Options: tool_legend.png
+    % Question Mark - Red
+    % plottype-hist3.gif
+    % GreenXs and RedOs
+    % plotpicker-pointfig.png
+    % Log:
+    % notesicon.gif
+    
+    function video_player_btn_MarkBad_callback(src, event)
+        disp('btnMarkBad callback hit!');
+        curr_video_frame = get_video_frame();
+        disp([num2str(curr_video_frame) 'is bad!']);
+    end
+
+    function video_player_btn_LogFrame_callback(src, event)
+        disp('btnLogFrame callback hit!');
+        curr_video_frame = get_video_frame();
+        disp(curr_video_frame);
+    end
+        
     
     %% Get the info about the loaded video:
     %vidPlayer.DataSource.Controls.CurrentFrame
