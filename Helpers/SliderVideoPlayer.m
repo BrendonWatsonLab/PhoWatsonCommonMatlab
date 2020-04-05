@@ -3,7 +3,7 @@ function [svp, svpSettings] = sliderVideoPlayer(svpConfig)
 %   Pho Hale, 3/17/2020
 
 global svp;
-global svpConfig;
+% global svpConfig;
 
 %% Input Argument Parsing:
 % defaultHeight = 1;
