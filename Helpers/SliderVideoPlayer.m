@@ -36,9 +36,16 @@ global svp;
 %     
 % end
 
+enable_dev_testing = true;
+if enable_dev_testing
+    frameIndexes = 1:1000;
+    greyscale_frames = zeros(512,510,length(frameIndexes));
+end
+
 
 if ~exist('svpConfig','var')
    disp("No svpConfig specified! Trying to build one from workspace!")
+   %if enable_dev_testing   
    svpConfig.DataPlot.x = frameIndexes;
    
    % Try to find 'v' VideoReader object.
@@ -51,7 +58,12 @@ if ~exist('svpConfig','var')
    if ~exist('greyscale_frames','var')
       % Try to load from workspace variable:
       if ~exist('curr_video_file.full_path','var')
-          error('You must specify a video filepath!');
+          
+          if enable_dev_testing
+             
+          else
+              error('You must specify a video filepath!');
+          end
       else
           % Set filepath from curr_video_file variable:
          svpConfig.VidPlayer.videoSource = curr_video_file.full_path; % from file path 
@@ -61,6 +73,17 @@ if ~exist('svpConfig','var')
       svpConfig.VidPlayer.videoSource = greyscale_frames; % From workspace variable
    end
    disp("Done. Continuing.")
+end
+
+
+if ~exist('svp.userAnnotations','var')
+   disp("svp.userAnnotations doesn't exist!")
+   % Create new userAnnotations:
+   svp.userAnnotations.frames = svpConfig.DataPlot.x;
+   svp.userAnnotations.isMarkedBad = zeros(length(svp.userAnnotations.frames),1,'logical');
+   
+   
+   
 end
 
 % if (~svpConfig)
@@ -105,10 +128,6 @@ end
     end
     
     % Video Player
-    % vidPlayCallbacks.PreFrameUpdate = @(~,~) disp('Pre Frame changed!');
-    % vidPlayCallbacks.PostFrameUpdate = @(~,~) disp('Post Frame changed!');
-
-    % svp.vidPlayer = implay(greyscale_frames, svpConfig.VidPlayer.frameRate);
     svp.vidPlayer = implay(svpConfig.VidPlayer.videoSource, svpConfig.VidPlayer.frameRate);
     spawnPosition = svp.vidPlayer.Parent.Position;
     set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883]);
@@ -143,28 +162,7 @@ end
        curr_button_obj = buttonObjs{btnIndex};
        svp.backupCallbacks.(buttonNames{btnIndex}) = curr_button_obj.ClickedCallback;
     end
-    
-%     vidPlayCallbacks.PlaybackMenuCallback = @(~,~) disp('Playback menu callback!!');
-%     vidPlayCallbacks.LoadedCallback = @(~,~) disp('Loaded callback!!');
 
-%     svp.vidPlayer.playbackMenuCallback = vidPlayCallbacks.PlaybackMenuCallback;
-%     svp.vidPlayer.addlistener(vidPlayCallbacks.FrameUpdate);
-%     addlistener(svp.Slider, 'Value', 'PostSet', @slider_post_update_function);
-%     svp.vidPlayer.addlistener(
-%     el = svp.vidPlayer.addlistener(svp.vidPlayer, 'DataLoadedEvent', vidPlayCallbacks.PlaybackMenuCallback)
-%     el = addlistener(svp.vidPlayer, 'DataLoadedEvent', vidPlayCallbacks.LoadedCallback)
-%     svp.vidPlayer.addlistener('DataLoadedEvent', vidPlayCallbacks.LoadedCallback);
-%     svp.vidPlayer.addlistener('PlayEvent', vidPlayCallbacks.PlayButtonCallback);
-%     svp.vidPlayer.addlistener('PauseEvent', vidPlayCallbacks.PauseButtonCallback);
-%     svp.vidPlayer.addlistener('StopEvent', vidPlayCallbacks.StopButtonCallback);
-%     
-    % playbtn.ClickedCallback = @(hco,ev)playPause(this)
-%     'uimgr.uitoolbar_Playback'
-%     'playPause'
-    % svp.vidPlayer.addlistener(vidPlayCallbacks.FrameUpdate);
-
-%     btnPlayPause.ClickedCallback = vidPlayCallbacks.PlayPauseButtonCallback;
-        
     for btnIndex = 1:length(buttonNames)
         curr_button_callback_fn = buttonCallbacks{btnIndex};
         curr_button_obj = buttonObjs{btnIndex};
@@ -175,10 +173,12 @@ end
     svp.vidCustomToolbar = uitoolbar(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_PhoCustom');
     
     btnMarkBad = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkBad');
-    btnMarkBad_imagePaths = {'Export\Mark\Warning.png', 'Export\Mark\Good.png'};
-    [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','plottype-hist3.gif'));
-    ptImage = ind2rgb(img,map);
-    btnMarkBad.CData = ptImage;
+    btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
+%     [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','plottype-hist3.gif'));
+%     ptImage = ind2rgb(img,map);
+%     btnMarkBad.CData = ptImage;
+    [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{1});
+    btnMarkBad.CData = btnMarkBad_img;
     btnMarkBad.Tooltip = 'Mark current frame bad';
     btnMarkBad.ClickedCallback = @video_player_btn_MarkBad_callback;
 
@@ -192,25 +192,21 @@ end
     
     
     %% Toggle pupil overlay 
-    btn_TogglePupilCircleOverlay_imagePaths = {'Export\HidePupil.png', 'Export\ShowPupil.png'};
+    btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
     btn_TogglePupilCircleOverlay = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
-    [img,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{0});
-    ptImage = ind2rgb(img,map);
-    btn_TogglePupilCircleOverlay.CData = ptImage;
+    [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
+    btn_TogglePupilCircleOverlay.CData = img1;
     btn_TogglePupilCircleOverlay.Tooltip = 'Toggle the pupil circle on or off';
     btn_TogglePupilCircleOverlay.ClickedCallback = @video_player_btn_TogglePupilCircleOverlay_callback;
     
     
     %% Toggle Eye Area overlay:
-    btn_ToggleEyePolyOverlay_imagePaths = {'Export\HideEyePoly.png', 'Export\ShowEyePoly.png'};
+    btn_ToggleEyePolyOverlay_imagePaths = {'HideEyePoly.png', 'ShowEyePoly.png'};
     btn_ToggleEyePolyOverlay = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_ToggleEyePolyOverlay');
-    [img,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{0});
-    ptImage = ind2rgb(img,map);
-    btn_ToggleEyePolyOverlay.CData = ptImage;
+    [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{1});
+    btn_ToggleEyePolyOverlay.CData = img2;
     btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
     btn_ToggleEyePolyOverlay.ClickedCallback = @video_player_btn_ToggleEyePolyOverlay_callback;
-    
-    
     
     % Options: tool_legend.png
     % Question Mark - Red
@@ -223,7 +219,30 @@ end
     function video_player_btn_MarkBad_callback(src, event)
         disp('btnMarkBad callback hit!');
         curr_video_frame = get_video_frame();
-        disp([num2str(curr_video_frame) 'is bad!']);
+        disp([num2str(curr_video_frame) ' is bad!']);
+        
+        % Get current user annotations:
+        curr_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+        updated_is_marked_bad = ~curr_is_marked_bad;
+        
+        % Set the new annotation value:
+        svp.userAnnotations.isMarkedBad(curr_video_frame) = updated_is_marked_bad;
+        
+        % Update Display: Ready to be potentially factored out into its own
+        % function.
+        final_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+        btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
+        if final_is_marked_bad
+           disp('    marking bad');
+           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{2});
+            btnMarkBad.CData = btnMarkBad_img;
+        else
+           svpSettings.shouldShowPupilOverlay = true;
+           disp('    un-marking bad');
+           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{1});
+            btnMarkBad.CData = btnMarkBad_img;
+        end
+        
     end
 
     function video_player_btn_LogFrame_callback(src, event)
@@ -440,6 +459,9 @@ end
             svpConfig.additionalDisplayData.pupilCirclePlotHandle.Tag = 'pupilCirclePlotHandle';
             %       hold off;
         end
+        
+        % Update buttons:
+        
         
         
         
