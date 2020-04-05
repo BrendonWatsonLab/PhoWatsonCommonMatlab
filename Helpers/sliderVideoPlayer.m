@@ -1,4 +1,4 @@
-function [svp, svpSettings] = sliderVideoPlayer(svpConfig)
+function [svp, svpSettings] = SliderVideoPlayer(svpConfig)
 %sliderVideoPlayer Opens a video player with a slider that reflects the current playback position:
 %   Pho Hale, 3/17/2020
 
@@ -39,7 +39,7 @@ global svp;
 
 if ~exist('svpConfig','var')
    disp("No svpConfig specified! Trying to build one from workspace!")
-   svpConfig.DataPlot.x = curr_dynamic_output.frameIndexes;
+   svpConfig.DataPlot.x = frameIndexes;
    
    % Try to find 'v' VideoReader object.
    if ~exist('v','var')
@@ -175,6 +175,7 @@ end
     svp.vidCustomToolbar = uitoolbar(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_PhoCustom');
     
     btnMarkBad = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkBad');
+    btnMarkBad_imagePaths = {'Export\Mark\Warning.png', 'Export\Mark\Good.png'};
     [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','plottype-hist3.gif'));
     ptImage = ind2rgb(img,map);
     btnMarkBad.CData = ptImage;
@@ -188,6 +189,28 @@ end
     btn_LogFrame.CData = ptImage;
     btn_LogFrame.Tooltip = 'Log current frame out to command window';
     btn_LogFrame.ClickedCallback = @video_player_btn_LogFrame_callback;
+    
+    
+    %% Toggle pupil overlay 
+    btn_TogglePupilCircleOverlay_imagePaths = {'Export\HidePupil.png', 'Export\ShowPupil.png'};
+    btn_TogglePupilCircleOverlay = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
+    [img,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{0});
+    ptImage = ind2rgb(img,map);
+    btn_TogglePupilCircleOverlay.CData = ptImage;
+    btn_TogglePupilCircleOverlay.Tooltip = 'Toggle the pupil circle on or off';
+    btn_TogglePupilCircleOverlay.ClickedCallback = @video_player_btn_TogglePupilCircleOverlay_callback;
+    
+    
+    %% Toggle Eye Area overlay:
+    btn_ToggleEyePolyOverlay_imagePaths = {'Export\HideEyePoly.png', 'Export\ShowEyePoly.png'};
+    btn_ToggleEyePolyOverlay = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_ToggleEyePolyOverlay');
+    [img,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{0});
+    ptImage = ind2rgb(img,map);
+    btn_ToggleEyePolyOverlay.CData = ptImage;
+    btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
+    btn_ToggleEyePolyOverlay.ClickedCallback = @video_player_btn_ToggleEyePolyOverlay_callback;
+    
+    
     
     % Options: tool_legend.png
     % Question Mark - Red
@@ -208,7 +231,39 @@ end
         curr_video_frame = get_video_frame();
         disp(curr_video_frame);
     end
+      
+    function video_player_btn_TogglePupilCircleOverlay_callback(src, event)
+        disp('btnTogglePupilCircleOverlay_callback callback hit!');
+        if svpSettings.shouldShowPupilOverlay
+           svpSettings.shouldShowPupilOverlay = false;
+           disp('    toggled off');
+           currAxes = svp.vidPlayer.Visual.Axes;
+           hExistingPlot = findobj(currAxes, 'Tag','pupilCirclePlotHandle');
+           delete(hExistingPlot) % Remove existing plot
+            
+        else
+           svpSettings.shouldShowPupilOverlay = true;
+           disp('    toggled on');
+           % TODO: update button icon, refresh displayed plot
+        end
         
+    end
+
+    function video_player_btn_ToggleEyePolyOverlay_callback(src, event)
+        disp('btnToggleEyePolyOverlay callback hit!');
+        if svpSettings.shouldShowEyePolygonOverlay
+           svpSettings.shouldShowEyePolygonOverlay = false;
+           disp('    toggled off');
+           currAxes = svp.vidPlayer.Visual.Axes;
+           hExistingPlot = findobj(currAxes, 'Tag','eyePolyPlotHandle');
+           delete(hExistingPlot) % Remove existing plot
+          
+        else
+           svpSettings.shouldShowEyePolygonOverlay = true;
+           disp('    toggled on');
+           % TODO: update button icon, refresh displayed plot
+        end
+    end
     
     %% Get the info about the loaded video:
     %vidPlayer.DataSource.Controls.CurrentFrame
@@ -235,8 +290,6 @@ end
 
 
     %% Slider:
-    % PreCallBack = @(~,~) disp('Pause the video here');
-    % PostCallBack = @(~,~)disp('Play the video here');
     % svp.Figure = figure();
     % Gets the slider position from the video player
     svpSettings.sliderWidth = svp.vidPlayer.Parent.Position(3) - 20;
@@ -368,7 +421,7 @@ end
 %             end
             
             hExistingPlot = findobj(currAxes, 'Tag','eyePolyPlotHandle');
-            delete(hExistingPlot)
+            delete(hExistingPlot) % Remove existing plot
             svpConfig.additionalDisplayData.eyePolyPlotHandle = plot(currAxes, svpConfig.additionalDisplayData.eye_bound_polys{slider_frame},'Tag','eyePolyPlotHandle');
         end
 
@@ -382,7 +435,7 @@ end
 %             end
             
             hExistingPupilsPlot = findobj(currAxes, 'Tag','pupilCirclePlotHandle');
-            delete(hExistingPupilsPlot)
+            delete(hExistingPupilsPlot) % Remove existing plot
             svpConfig.additionalDisplayData.pupilCirclePlotHandle = viscircles(currAxes, svpConfig.additionalDisplayData.processedFramePupilInfo_Center(slider_frame,:), svpConfig.additionalDisplayData.processedFramePupilInfo_Radius(slider_frame)); 
             svpConfig.additionalDisplayData.pupilCirclePlotHandle.Tag = 'pupilCirclePlotHandle';
             %       hold off;
