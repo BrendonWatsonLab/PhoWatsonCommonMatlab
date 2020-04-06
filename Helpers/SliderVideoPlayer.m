@@ -36,7 +36,7 @@ global svp;
 %     
 % end
 
-enable_dev_testing = true;
+enable_dev_testing = false;
 if enable_dev_testing
     frameIndexes = 1:1000;
     greyscale_frames = zeros(512,640,length(frameIndexes));
