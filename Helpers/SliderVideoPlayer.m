@@ -39,7 +39,7 @@ global svp;
 enable_dev_testing = true;
 if enable_dev_testing
     frameIndexes = 1:1000;
-    greyscale_frames = zeros(512,510,length(frameIndexes));
+    greyscale_frames = zeros(512,640,length(frameIndexes));
 end
 
 
@@ -82,6 +82,8 @@ if ~exist('svp.userAnnotations','var')
    svp.userAnnotations.frames = svpConfig.DataPlot.x;
    svp.userAnnotations.isMarkedBad = zeros(length(svp.userAnnotations.frames),1,'logical');
    
+   svp.userAnnotations.accumulatedList = {};
+   
    
    
 end
@@ -101,6 +103,7 @@ end
 %     svpConfig.VidPlayer.frameRate = v.FrameRate;
     
     % Load config:
+    svpSettings.shouldAdjustSpawnPosition = false;
     svpSettings.shouldShowPairedFigure = false;
     svpSettings.shouldShowPupilOverlay = true;
     svpSettings.shouldShowEyePolygonOverlay = true;
@@ -129,8 +132,12 @@ end
     
     % Video Player
     svp.vidPlayer = implay(svpConfig.VidPlayer.videoSource, svpConfig.VidPlayer.frameRate);
+    
+    % Adjust Spawn Position:
     spawnPosition = svp.vidPlayer.Parent.Position;
-    set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883]);
+    if svpSettings.shouldAdjustSpawnPosition
+        set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883]);
+    end
     
     %% Ready to work:
     svp.vidToolbar = findobj(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_Playback');
@@ -194,8 +201,9 @@ end
     %% Toggle pupil overlay 
     btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
     btn_TogglePupilCircleOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
-    [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
-    btn_TogglePupilCircleOverlay.CData = img1;
+%     [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
+    %btn_TogglePupilCircleOverlay.CData = img1;
+    btn_TogglePupilCircleOverlay.CData = iconRead(btn_TogglePupilCircleOverlay_imagePaths{(svpSettings.shouldShowPupilOverlay + 1)});
     btn_TogglePupilCircleOverlay.Tooltip = 'Toggle the pupil circle on or off';
     btn_TogglePupilCircleOverlay.ClickedCallback = @video_player_btn_TogglePupilCircleOverlay_callback;
     
@@ -203,8 +211,9 @@ end
     %% Toggle Eye Area overlay:
     btn_ToggleEyePolyOverlay_imagePaths = {'HideEyePoly.png', 'ShowEyePoly.png'};
     btn_ToggleEyePolyOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_ToggleEyePolyOverlay');
-    [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{1});
-    btn_ToggleEyePolyOverlay.CData = img2;
+    btn_ToggleEyePolyOverlay.CData = iconRead(btn_ToggleEyePolyOverlay_imagePaths{(svpSettings.shouldShowEyePolygonOverlay + 1)});
+    
+    
     btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
     btn_ToggleEyePolyOverlay.ClickedCallback = @video_player_btn_ToggleEyePolyOverlay_callback;
     
@@ -319,9 +328,20 @@ end
     if svp.vidInfo.vidPlaySourceType == "Workspace"
         % Loaded from a workspace variable!
         svp.vidInfo.vidPlaySourceWorkspaceVariableName = svp.vidPlayer.DataSource.Name;
-        vidPlaySourceWorkspaceVariableValue = eval(svp.vidInfo.vidPlaySourceWorkspaceVariableName);
-        svp.vidInfo.numFrames = length(vidPlaySourceWorkspaceVariableValue);
-        svp.vidInfo.currentPlaybackFrame = svp.vidPlayer.DataSource.Controls.CurrentFrame;
+        
+        if strcmp(svp.vidInfo.vidPlaySourceWorkspaceVariableName, '(MATLAB Expression)')
+            if enable_dev_testing
+                svp.vidInfo.numFrames = length(frameIndexes);
+                svp.vidInfo.currentPlaybackFrame = 1;
+            else
+                error('Workspace variable name was MATLAB Expression, but this is only allowable in dev_testing mode!');
+            end
+        else
+            vidPlaySourceWorkspaceVariableValue = eval(svp.vidInfo.vidPlaySourceWorkspaceVariableName);
+            svp.vidInfo.numFrames = length(vidPlaySourceWorkspaceVariableValue);
+            svp.vidInfo.currentPlaybackFrame = svp.vidPlayer.DataSource.Controls.CurrentFrame;
+        end
+        
     elseif svp.vidInfo.vidPlaySourceType == "File"
         svp.vidInfo.vidPlaySourceWorkspaceVariableName = svp.vidPlayer.DataSource.Name;
         svp.vidInfo.numFrames = length(svpConfig.DataPlot.x);
