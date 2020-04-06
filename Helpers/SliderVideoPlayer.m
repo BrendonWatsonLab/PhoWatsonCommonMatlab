@@ -193,7 +193,7 @@ end
     
     %% Toggle pupil overlay 
     btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
-    btn_TogglePupilCircleOverlay = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
+    btn_TogglePupilCircleOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
     [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
     btn_TogglePupilCircleOverlay.CData = img1;
     btn_TogglePupilCircleOverlay.Tooltip = 'Toggle the pupil circle on or off';
@@ -202,7 +202,7 @@ end
     
     %% Toggle Eye Area overlay:
     btn_ToggleEyePolyOverlay_imagePaths = {'HideEyePoly.png', 'ShowEyePoly.png'};
-    btn_ToggleEyePolyOverlay = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_ToggleEyePolyOverlay');
+    btn_ToggleEyePolyOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_ToggleEyePolyOverlay');
     [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{1});
     btn_ToggleEyePolyOverlay.CData = img2;
     btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
@@ -215,6 +215,43 @@ end
     % plotpicker-pointfig.png
     % Log:
     % notesicon.gif
+    
+    
+    function video_player_update_custom_toolbar_buttons_appearance()
+        curr_video_frame = get_video_frame();
+        
+        % User Marked Bad:
+        final_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+        btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
+        if final_is_marked_bad
+           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{2});
+            btnMarkBad.CData = btnMarkBad_img;
+        else
+           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{1});
+            btnMarkBad.CData = btnMarkBad_img;
+        end
+        
+        % Pupil Overlay
+        btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
+        if svpSettings.shouldShowPupilOverlay
+            [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
+            btn_TogglePupilCircleOverlay.CData = img1;
+        else
+            [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{2});
+            btn_TogglePupilCircleOverlay.CData = img1;
+        end
+        
+        % Eye Poly
+        btn_ToggleEyePolyOverlay_imagePaths = {'HideEyePoly.png', 'ShowEyePoly.png'};
+        if svpSettings.shouldShowEyePolygonOverlay
+            [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{1});
+            btn_ToggleEyePolyOverlay.CData = img2;
+        else
+            [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{2});
+            btn_ToggleEyePolyOverlay.CData = img2;
+        end
+        
+    end
     
     function video_player_btn_MarkBad_callback(src, event)
         disp('btnMarkBad callback hit!');
@@ -230,18 +267,7 @@ end
         
         % Update Display: Ready to be potentially factored out into its own
         % function.
-        final_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
-        btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
-        if final_is_marked_bad
-           disp('    marking bad');
-           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{2});
-            btnMarkBad.CData = btnMarkBad_img;
-        else
-           svpSettings.shouldShowPupilOverlay = true;
-           disp('    un-marking bad');
-           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{1});
-            btnMarkBad.CData = btnMarkBad_img;
-        end
+        video_player_update_custom_toolbar_buttons_appearance();
         
     end
 
@@ -265,6 +291,7 @@ end
            disp('    toggled on');
            % TODO: update button icon, refresh displayed plot
         end
+        video_player_update_custom_toolbar_buttons_appearance();
         
     end
 
@@ -282,6 +309,7 @@ end
            disp('    toggled on');
            % TODO: update button icon, refresh displayed plot
         end
+        video_player_update_custom_toolbar_buttons_appearance();
     end
     
     %% Get the info about the loaded video:
