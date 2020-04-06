@@ -88,20 +88,6 @@ if ~exist('svp.userAnnotations','var')
    
 end
 
-% if (~svpConfig)
-%     svpConfig.VidPlayer.videoSource = greyscale_frames; % From workspace variable
-%     svpConfig.VidPlayer.videoSource = curr_video_file.full_path; % from file path
-%     svpConfig.VidPlayer.frameRate = v.FrameRate;
-% end
-
-%     svpConfig.DataPlot.x = frameIndexes;
-%     svpConfig.DataPlot.y = temp;
-%     svpConfig.DataPlot.title = 'Region Intensity';
-%     
-% %     svpConfig.VidPlayer.videoSource = greyscale_frames; % From workspace variable
-%     svpConfig.VidPlayer.videoSource = curr_video_file.full_path; % from file path
-%     svpConfig.VidPlayer.frameRate = v.FrameRate;
-    
     % Load config:
     svpSettings.shouldAdjustSpawnPosition = false;
     svpSettings.shouldShowPairedFigure = false;
@@ -135,9 +121,42 @@ end
     
     % Adjust Spawn Position:
     spawnPosition = svp.vidPlayer.Parent.Position;
-    if svpSettings.shouldAdjustSpawnPosition
-        set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883]);
+    % Get spawn size:
+    spawnHeight = spawnPosition(4);
+    spawnWidth = spawnPosition(3);
+    
+    hPadding = 60;
+    vPadding = 80;
+    
+    idealSpawnHeight = 512 + vPadding;
+    idealSpawnWidth = 640 + hPadding;
+
+    updatedSpawnPosition = spawnPosition;
+    
+    
+    if (spawnHeight < idealSpawnHeight)
+        updatedSpawnPosition(4) = idealSpawnHeight;
     end
+    
+    if (spawnWidth < idealSpawnWidth)
+        updatedSpawnPosition(3) = idealSpawnWidth;
+    end
+        
+    if svpSettings.shouldAdjustSpawnPosition
+        % Update the spawn positions and sizes:
+        updatedSpawnPosition(1) = 180;
+        updatedSpawnPosition(2) = 300;
+        updatedSpawnPosition(3) = 867;
+        updatedSpawnPosition(4) = 883;
+        set(svp.vidPlayer.Parent, 'Position',  updatedSpawnPosition);
+    else
+        %Otherwise just update the spawn sizes:
+        set(svp.vidPlayer.Parent, 'Position',  updatedSpawnPosition);
+    end
+    
+    % Update the title:
+    oldName = svp.vidPlayer.Parent.Name;
+    svp.vidPlayer.Parent.Name = ['Pho ', oldName]; 
     
     %% Ready to work:
     svp.vidToolbar = findobj(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_Playback');
@@ -163,7 +182,6 @@ end
 %     buttonCallbacks = {video_player_btn_JumpTo_callback,video_player_btn_GotoEnd_callback,video_player_btn_StepFwd_callback,video_player_btn_FFwd_callback,video_player_btn_playPause_callback,video_player_btn_Stop_callback,video_player_btn_Rewind_callback,video_player_btn_StepBack_callback,video_player_btn_GotoStart_callback};
     buttonCallbacks = {@(hco,ev) video_player_btn_JumpTo_callback(hco,ev); , @(hco,ev)video_player_btn_GotoEnd_callback(hco,ev); , @(hco,ev)video_player_btn_StepFwd_callback(hco,ev); , @(hco,ev)video_player_btn_FFwd_callback(hco,ev); , @(hco,ev)video_player_btn_playPause_callback(hco,ev); , @(hco,ev)video_player_btn_Stop_callback(hco,ev); , @(hco,ev)video_player_btn_Rewind_callback(hco,ev); , @(hco,ev)video_player_btn_StepBack_callback(hco,ev); , @(hco,ev)video_player_btn_GotoStart_callback(hco,ev);};
     
-    
     % Backup the original callback functions.
     for btnIndex = 1:length(buttonNames)
        curr_button_obj = buttonObjs{btnIndex};
@@ -181,11 +199,7 @@ end
     
     btnMarkBad = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkBad');
     btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
-%     [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','plottype-hist3.gif'));
-%     ptImage = ind2rgb(img,map);
-%     btnMarkBad.CData = ptImage;
-    [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{1});
-    btnMarkBad.CData = btnMarkBad_img;
+    btnMarkBad.CData = iconRead(btnMarkBad_imagePaths{(1)});
     btnMarkBad.Tooltip = 'Mark current frame bad';
     btnMarkBad.ClickedCallback = @video_player_btn_MarkBad_callback;
 
@@ -201,8 +215,6 @@ end
     %% Toggle pupil overlay 
     btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
     btn_TogglePupilCircleOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
-%     [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
-    %btn_TogglePupilCircleOverlay.CData = img1;
     btn_TogglePupilCircleOverlay.CData = iconRead(btn_TogglePupilCircleOverlay_imagePaths{(svpSettings.shouldShowPupilOverlay + 1)});
     btn_TogglePupilCircleOverlay.Tooltip = 'Toggle the pupil circle on or off';
     btn_TogglePupilCircleOverlay.ClickedCallback = @video_player_btn_TogglePupilCircleOverlay_callback;
@@ -212,8 +224,6 @@ end
     btn_ToggleEyePolyOverlay_imagePaths = {'HideEyePoly.png', 'ShowEyePoly.png'};
     btn_ToggleEyePolyOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_ToggleEyePolyOverlay');
     btn_ToggleEyePolyOverlay.CData = iconRead(btn_ToggleEyePolyOverlay_imagePaths{(svpSettings.shouldShowEyePolygonOverlay + 1)});
-    
-    
     btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
     btn_ToggleEyePolyOverlay.ClickedCallback = @video_player_btn_ToggleEyePolyOverlay_callback;
     
@@ -225,51 +235,53 @@ end
     % Log:
     % notesicon.gif
     
-    
+    %% Updates the state of the toolbar buttons:
     function video_player_update_custom_toolbar_buttons_appearance()
         curr_video_frame = get_video_frame();
         
         % User Marked Bad:
         final_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
-        btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
+        final_is_marked_bad_index = 0;
         if final_is_marked_bad
-           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{2});
-            btnMarkBad.CData = btnMarkBad_img;
+           final_is_marked_bad_index = 2;
         else
-           [btnMarkBad_img,map] = imread(btnMarkBad_imagePaths{1});
-            btnMarkBad.CData = btnMarkBad_img;
+           final_is_marked_bad_index = 1;
         end
+        btnMarkBad.CData = iconRead(btnMarkBad_imagePaths{final_is_marked_bad_index});
+        
         
         % Pupil Overlay
-        btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
-        if svpSettings.shouldShowPupilOverlay
-            [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{1});
-            btn_TogglePupilCircleOverlay.CData = img1;
-        else
-            [img1,map] = imread(btn_TogglePupilCircleOverlay_imagePaths{2});
-            btn_TogglePupilCircleOverlay.CData = img1;
-        end
+%         if svpSettings.shouldShowPupilOverlay
+
+%         else
+
+%         end
+        btn_TogglePupilCircleOverlay.CData = iconRead(btn_TogglePupilCircleOverlay_imagePaths{(svpSettings.shouldShowPupilOverlay + 1)});
+        
         
         % Eye Poly
-        btn_ToggleEyePolyOverlay_imagePaths = {'HideEyePoly.png', 'ShowEyePoly.png'};
-        if svpSettings.shouldShowEyePolygonOverlay
-            [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{1});
-            btn_ToggleEyePolyOverlay.CData = img2;
-        else
-            [img2,map] = imread(btn_ToggleEyePolyOverlay_imagePaths{2});
-            btn_ToggleEyePolyOverlay.CData = img2;
-        end
+%         if svpSettings.shouldShowEyePolygonOverlay
+
+%         else
+
+%         end
+        btn_ToggleEyePolyOverlay.CData = iconRead(btn_ToggleEyePolyOverlay_imagePaths{(svpSettings.shouldShowEyePolygonOverlay + 1)});
         
     end
     
     function video_player_btn_MarkBad_callback(src, event)
         disp('btnMarkBad callback hit!');
         curr_video_frame = get_video_frame();
-        disp([num2str(curr_video_frame) ' is bad!']);
         
         % Get current user annotations:
         curr_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
         updated_is_marked_bad = ~curr_is_marked_bad;
+        
+        if updated_is_marked_bad
+           disp([num2str(curr_video_frame) ' is bad!']); 
+        else
+           disp([num2str(curr_video_frame) ' is good!']); 
+        end
         
         % Set the new annotation value:
         svp.userAnnotations.isMarkedBad(curr_video_frame) = updated_is_marked_bad;
