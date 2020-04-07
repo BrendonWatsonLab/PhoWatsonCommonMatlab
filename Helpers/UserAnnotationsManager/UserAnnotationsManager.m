@@ -12,8 +12,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
     
     methods
         function obj = UserAnnotationsManager(videoFileIdentifier, videoFileNumFrames, annotatingUser)
-            %FRAMESMANAGER Construct an instance of this class
-            %   Detailed explanation goes here
+            %UserAnnotationsManager Construct an instance of this class
             currVideoFileInfo.videoFileIdentifier = videoFileIdentifier;
             currVideoFileInfo.videoFileNumFrames = videoFileNumFrames;
             
@@ -33,10 +32,11 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             obj.addAnnotationType('Temp');
         end
         
+        
+        %% Annotation Type Objects:
         function TF = addAnnotationType(obj, typeName, typeDescription)
-            %METHOD1 Adds a new annotation type
-            %   Detailed explanation goes here
-          
+            %addAnnotationType Adds a new annotation type
+
             if ~exist('typeDescription','var')
                 typeDescription = '';
             end            
@@ -84,7 +84,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
         end
         
-        
+        %% Annotation Objects:
         function createAnnotation(obj, typeName, frameNumber, comment)
             %createAnnotation Adds a new annotation object to an existing typeArray
             if ~exist('frameNumber','var')
@@ -97,9 +97,6 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
             if any(strcmp(obj.UserAnnotationArrayNames,typeName))
                 % Type already exists
-                
-                %             (obj.UserAnnotationObjArrays.(typeName)){end+1} = newAnnotationObj;
-%                 obj.UserAnnotationObjArrays.(typeName) = {obj.UserAnnotationObjArrays.(typeName), newAnnotationObj};
                 if isKey(obj.UserAnnotationObjMaps.(typeName),frameNumber)
                    % frame already exists
                    obj.UserAnnotationObjMaps.(typeName)(frameNumber).modifyComment(comment);
@@ -115,7 +112,30 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
         end
         
-        
+        function removeAnnotation(obj, typeName, frameNumber)
+            %removeAnnotation Removes an existing annotation object at a given frameNumber for an existing typeArray
+            if ~exist('frameNumber','var')
+                error('Requires the frameNumber!')
+            end
+
+            if any(strcmp(obj.UserAnnotationArrayNames,typeName))
+                % Type already exists
+                
+                if isKey(obj.UserAnnotationObjMaps.(typeName),frameNumber)
+                   % frame already exists
+				   remove(obj.UserAnnotationObjMaps.(typeName),frameNumber); % remove the frame
+                else
+                   % frame does not yet exist
+					warning('frame does not exist!')
+                end
+            else
+                % type doesn't yet exist, create it
+                error('type does not exist!')
+            end
+            
+		end
+		
+		
         
         %% Getters:
         function name = getAnnotationName(obj, idx)
@@ -131,6 +151,60 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
         function array = getAnnotationsArray(obj, typeName)
             %METHOD1 Gets the array at a given typeName
             array = obj.getAnnotationMap(typeName).values;   
+        end
+        
+        function array = getAnnotationsFrames(obj, typeName)
+            %METHOD1 Gets the array at a given typeName
+            array = obj.getAnnotationMap(typeName).keys;   
+        end
+        
+        %% Aggregate and Combined:
+        
+        function foundFrameAnnotationObjs = getAllAnnotationsForFrame(obj, frameNumber, typeNames)
+            %METHOD1 Gets all annotations for the specified frameNumber
+            %that are of the types listed in typeNames, or all if
+            %unspecified.
+            if ~exist('frameNumber','var')
+                error('Requires the frameNumber!')
+            end
+            
+            if ~exist('typeNames','var')
+                typeNames = obj.UserAnnotationArrayNames;
+            end
+            
+            for i=1:length(typeNames)
+               currTypeName = typeNames{i};
+               currAnnotationMap = obj.getAnnotationMap(currTypeName);
+               % if this frame exists as a key, add it to the output array:       
+               if isKey(currAnnotationMap, frameNumber)
+                   currExplicitAnnotation = ExplicitlyTypedUserAnnotation.createExplicitlyTypedFromRegular(currAnnotationMap(frameNumber), currTypeName);
+%                    foundFrameAnnotationObjs{end+1} = currAnnotationMap(frameNumber);
+                   foundFrameAnnotationObjs{end+1} = currExplicitAnnotation;
+               end
+            end  
+        end
+        
+        
+        function flatMap = flattenAnnotationsToFrames(obj)
+            %flattenAnnotationsToFrames Produces a flat map with a list of one or more ExplictlyTypedUserAnnotations at any frame in UserAnnotationObjMaps. the array at a given typeName
+            flatMap = containers.Map('KeyType','uint32','ValueType','any');
+            
+            for i=1:length(obj.UserAnnotationArrayNames)
+                currTypeName = obj.getAnnotationName(i);
+                currAnnotationMap = obj.getAnnotationMap(currTypeName);
+                currFrames = currAnnotationMap.keys;
+                for j = 1:length(currFrames)
+                    currFrame = currFrames(j);
+                    currExplicitAnnotation = ExplicitlyTypedUserAnnotation.createExplicitlyTypedFromRegular(currAnnotationMap(currFrame), currTypeName);
+					if isKey(flatMap, frameNumber)
+					   % already exists from another type, add it to the array
+					   flatMap(currFrame) = {flatMap(currFrame), currExplicitAnnotation};
+					else
+					   flatMap(currFrame) = {currExplicitAnnotation};
+					end
+                end
+            end
+              
         end
         
         

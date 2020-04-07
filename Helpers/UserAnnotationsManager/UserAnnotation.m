@@ -1,6 +1,7 @@
 classdef UserAnnotation
     %UserAnnotation A user-created annotation for a video file
     %   Has a specified FrameNumber
+    % Doesn't include an explicit annotation type to save memory.
     
     properties
         FrameNumber
