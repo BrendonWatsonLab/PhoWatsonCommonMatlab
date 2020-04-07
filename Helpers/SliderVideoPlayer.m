@@ -154,7 +154,7 @@ end
         set(svp.vidPlayer.Parent, 'Position',  updatedSpawnPosition);
     end
     
-    % Update the title:
+    % Update the window title:
     oldName = svp.vidPlayer.Parent.Name;
     svp.vidPlayer.Parent.Name = ['Pho ', oldName]; 
     
