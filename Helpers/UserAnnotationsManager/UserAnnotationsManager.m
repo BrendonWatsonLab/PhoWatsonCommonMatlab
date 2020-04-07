@@ -8,10 +8,11 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
         UserAnnotationArrayDescriptions
         UserAnnotationObjMaps
         AnnotatingUser
+		BackingFile
     end
     
     methods
-        function obj = UserAnnotationsManager(videoFileIdentifier, videoFileNumFrames, annotatingUser)
+        function obj = UserAnnotationsManager(videoFileIdentifier, videoFileNumFrames, annotatingUser, backingFilePath)
             %UserAnnotationsManager Construct an instance of this class
             currVideoFileInfo.videoFileIdentifier = videoFileIdentifier;
             currVideoFileInfo.videoFileNumFrames = videoFileNumFrames;
@@ -20,7 +21,11 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 annotatingUser = 'Anonymous';
             end  
             obj.AnnotatingUser = annotatingUser;
-            
+			
+			if ~exist('backingFilePath','var')
+                backingFilePath = 'UserAnnotationsBackingFile.mat';
+            end  
+						
             obj.UserAnnotationArrayNames = {};
             obj.UserAnnotationArrayDescriptions = {};
             
@@ -28,8 +33,21 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
             obj.UserAnnotationObjMaps = {};
             
+			% Setup backing file
+			obj.BackingFile.fullPath = backingFilePath;
+			obj.BackingFile.hasBackingFile = false;
+            obj.BackingFile.shouldAutosaveToBackingFile = true;
+			% obj.BackingFile.shouldAutosaveInTransactions:  
+				% if true, saves most efficiently to the backing file (only what's been updated in the object) (not currently implemented.
+				% otherwise, it saves the whole object each time using saveToBackingFile() which is less efficient.
+			obj.BackingFile.shouldAutosaveInTransactions = true;
+			
+			
+			obj.tryOpenBackingFile();
+			
             % Add a default type
             obj.addAnnotationType('Temp');
+
         end
         
         
@@ -51,6 +69,17 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 obj.UserAnnotationArrayNames{end+1} = typeName;
                 obj.UserAnnotationArrayDescriptions{end+1} = typeDescription;
                 obj.UserAnnotationObjMaps.(typeName) = containers.Map('KeyType','uint32','ValueType','any'); % might need to be 'any'
+				
+				if obj.BackingFile.shouldAutosaveToBackingFile
+					if ~obj.BackingFile.shouldAutosaveInTransactions
+						obj.BackingFile.matFile.obj.UserAnnotationArrayNames{end+1} = typeName;
+						obj.BackingFile.matFile.obj.UserAnnotationArrayDescriptions{end+1} = typeDescription;
+						obj.BackingFile.matFile.obj.UserAnnotationObjMaps.(typeName) = containers.Map('KeyType','uint32','ValueType','any'); % might need to be 'any'
+					else
+						obj.saveToBackingFile();
+					end
+				end
+				
             end
             
         end
@@ -104,7 +133,16 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                    % frame does not yet exist
                    newAnnotationObj = UserAnnotation(frameNumber, comment, obj.AnnotatingUser);
                    obj.UserAnnotationObjMaps.(typeName)(frameNumber) = newAnnotationObj;
-                end
+				end
+				
+				if obj.BackingFile.shouldAutosaveToBackingFile
+					if ~obj.BackingFile.shouldAutosaveInTransactions
+						obj.BackingFile.matFile.obj.UserAnnotationObjMaps.(typeName)(frameNumber) = obj.UserAnnotationObjMaps.(typeName)(frameNumber);
+					else
+						obj.saveToBackingFile();
+					end
+				end
+				
             else
                 % type doesn't yet exist, create it
                 error('type does not exist!')
@@ -124,6 +162,14 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 if isKey(obj.UserAnnotationObjMaps.(typeName),frameNumber)
                    % frame already exists
 				   remove(obj.UserAnnotationObjMaps.(typeName),frameNumber); % remove the frame
+					if obj.BackingFile.shouldAutosaveToBackingFile
+						if ~obj.BackingFile.shouldAutosaveInTransactions
+							remove(obj.BackingFile.matFile.obj.UserAnnotationObjMaps.(typeName),frameNumber);
+						else
+							obj.saveToBackingFile();
+						end
+					end	
+				
                 else
                    % frame does not yet exist
 					warning('frame does not exist!')
@@ -135,6 +181,36 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
 		end
 		
+		
+		%% Backing File Methods:
+		function tryOpenBackingFile(obj)
+			% see if the file exists at the provided path
+			if ~exist(obj.BackingFile.fullPath,'file')
+                % if it doesn't exist, create it
+				disp(['Creating new backing file at ' obj.BackingFile.fullPath])
+			else
+				disp(['Opening existing backing file at ' obj.BackingFile.fullPath])
+				% TODO: load from backing file:
+				error('Not yet finished!')
+			end
+			
+			obj.BackingFile.matFile = matfile(obj.BackingFile.fullPath,'Writable',true);
+			obj.createBackingFile();
+			obj.BackingFile.hasBackingFile = true;
+
+		end
+		
+		function createBackingFile(obj)
+			save(obj.BackingFile.fullPath,'obj','-v7.3');
+% 			save(obj.BackingFile.fullPath,'-append', obj);
+		end
+		
+		
+		function saveToBackingFile(obj)
+			%save(obj.BackingFile.fullPath,'obj','-v7.3');
+			save(obj.BackingFile.fullPath,'obj','-v7.3');
+% 			obj.BackingFile.matFile.obj = obj;
+		end
 		
         
         %% Getters:
@@ -184,7 +260,6 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             end  
         end
         
-        
         function flatMap = flattenAnnotationsToFrames(obj)
             %flattenAnnotationsToFrames Produces a flat map with a list of one or more ExplictlyTypedUserAnnotations at any frame in UserAnnotationObjMaps. the array at a given typeName
             flatMap = containers.Map('KeyType','uint32','ValueType','any');
@@ -194,9 +269,9 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 currAnnotationMap = obj.getAnnotationMap(currTypeName);
                 currFrames = currAnnotationMap.keys;
                 for j = 1:length(currFrames)
-                    currFrame = currFrames(j);
+                    currFrame = currFrames{j};
                     currExplicitAnnotation = ExplicitlyTypedUserAnnotation.createExplicitlyTypedFromRegular(currAnnotationMap(currFrame), currTypeName);
-					if isKey(flatMap, frameNumber)
+					if isKey(flatMap, currFrame)
 					   % already exists from another type, add it to the array
 					   flatMap(currFrame) = {flatMap(currFrame), currExplicitAnnotation};
 					else
@@ -208,6 +283,16 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
         end
         
         
-    end
+	end % end methods
+	methods (Static)
+      % Creates an explictly typed annotation from a regular one.
+      function obj = loadFromExistingBackingFile(backingFilePath)
+		if ~exist('backingFilePath','var')
+			backingFilePath = 'UserAnnotationsBackingFile.mat';
+		end  
+		 L = load(backingFilePath,'obj');
+		 obj = L.obj;
+      end
+	end
 end
 
