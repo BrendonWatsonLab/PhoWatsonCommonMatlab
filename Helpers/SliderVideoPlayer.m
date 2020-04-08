@@ -89,7 +89,7 @@ if ~exist('svp.userAnnotations','var')
    svpConfig.UserAnnotationsOptions.uaFilepath = returnedFilePath;
    if shouldUseUserAnnotations
 	   if enable_dev_testing
-		outputAbsoluteUniqueVideoIDString = 'enable_dev_testing';             
+		outputAbsoluteUniqueVideoIDString = 'dev_testing';             
 	   else
 		outputAbsoluteUniqueVideoIDString = GenerateAbsoluteVideoIdentifier(svpConfig.VidPlayer.videoSource);
 	   end
@@ -107,6 +107,9 @@ if ~exist('svp.userAnnotations','var')
 			svp.userAnnotations.uaMan.addAnnotationType('UnusualFrame');
 			svp.userAnnotations.uaMan.addAnnotationType('EventChange');
 			svp.userAnnotations.uaMan.addAnnotationType('NeedsReview');
+			
+			svp.userAnnotations.uaMan.addAnnotationType('Log');
+			svp.userAnnotations.uaMan.addAnnotationType('AccumulatedListA');
 		end
 
    else
@@ -147,8 +150,8 @@ function [willCreateNew, shouldUseUserAnnotations, returnedFilePath] = userAnnot
 % 				returnedFilePath = fullfile(path,file);
 % 				
 % 			end
-		returnedFilePath = ''; % By setting this to empty, the UserAnnotationManager initializer will ask where to create the file
-		willCreateNew = true;
+			returnedFilePath = ''; % By setting this to empty, the UserAnnotationManager initializer will ask where to create the file
+			willCreateNew = true;
 
 		case 'No thank you'
 			disp('Skipping user annotations')
@@ -270,21 +273,7 @@ end % end function
     %% Add a Custom Toolbar to allow marking frames
     svp.vidCustomToolbar = uitoolbar(svp.vidPlayer.Parent,'Tag','uimgr.uitoolbar_PhoCustom');
     
-    btnMarkBad = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkBad');
-    btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
-    btnMarkBad.CData = iconRead(btnMarkBad_imagePaths{(1)});
-    btnMarkBad.Tooltip = 'Mark current frame bad';
-    btnMarkBad.ClickedCallback = @video_player_btn_MarkBad_callback;
 
-    
-    btn_LogFrame = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_LogFrame');
-    [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','notesicon.gif'));
-    ptImage = ind2rgb(img,map);
-    btn_LogFrame.CData = ptImage;
-    btn_LogFrame.Tooltip = 'Log current frame out to command window';
-    btn_LogFrame.ClickedCallback = @video_player_btn_LogFrame_callback;
-    
-    
     %% Toggle pupil overlay 
     btn_TogglePupilCircleOverlay_imagePaths = {'HidePupil.png', 'ShowPupil.png'};
     btn_TogglePupilCircleOverlay = uitoggletool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_TogglePupilCircleOverlay');
@@ -300,6 +289,61 @@ end % end function
     btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
     btn_ToggleEyePolyOverlay.ClickedCallback = @video_player_btn_ToggleEyePolyOverlay_callback;
     
+	%% Frame Buttons:
+	
+	%% Toggle MarkBad
+    btnMarkBad = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkBad');
+%     btnMarkBad_imagePaths = {'Warning.png', 'Good.png'};
+	btnMarkBad_imagePaths = {'MarkBad.png', 'MarkGood.png'};
+    btnMarkBad.CData = iconRead(btnMarkBad_imagePaths{(1)});
+    btnMarkBad.Tooltip = 'Mark current frame bad';
+    btnMarkBad.ClickedCallback = @video_player_btn_MarkBad_callback;
+
+    %% Log Frame
+    btn_LogFrame = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_LogFrame');
+%     [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','notesicon.gif'));
+%     ptImage = ind2rgb(img,map);
+    btn_LogFrame.CData = get_matlab_internal_icon('notesicon.gif');
+    btn_LogFrame.Tooltip = 'Log current frame out to command window';
+    btn_LogFrame.ClickedCallback = @video_player_btn_LogFrame_callback;
+	
+	
+	%% Toggle MarkUnusual
+    btnMarkUnusual = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkUnusual');
+    btnMarkUnusual_imagePaths = {'MarkUnusual.png', 'ClearUnusual.png'};
+    btnMarkUnusual.CData = iconRead(btnMarkUnusual_imagePaths{(1)});
+    btnMarkUnusual.Tooltip = 'Mark current frame unusual';
+    btnMarkUnusual.ClickedCallback = @video_player_btn_MarkUnusual_callback;
+	
+	%% Toggle Needs Review
+	btnMarkNeedsReview = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkNeedsReview');
+	btnMarkNeedsReview_imagePaths = {'MarkNeedsReview.png', 'ClearNeedsReview.png'};
+	btnMarkNeedsReview.CData = iconRead(btnMarkNeedsReview_imagePaths{(1)});
+	btnMarkNeedsReview.Tooltip = 'Mark current frame NeedsReview';
+	btnMarkNeedsReview.ClickedCallback = @video_player_btn_MarkNeedsReview_callback;
+
+		%% Toggle Transition
+	btnMarkTransition = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkTransition');
+	btnMarkTransition_imagePaths = {'MarkTransition.png', 'ClearTransition.png'};
+	btnMarkTransition.CData = iconRead(btnMarkTransition_imagePaths{(1)});
+	btnMarkTransition.Tooltip = 'Mark current frame Transition';
+	btnMarkTransition.ClickedCallback = @video_player_btn_MarkTransition_callback;
+
+% 	%% Toggle TEMPLATE
+% btnMarkTEMPLATE = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkTEMPLATE');
+% btnMarkTEMPLATE_imagePaths = {'MarkTEMPLATE.png', 'ClearTEMPLATE.png'};
+% btnMarkTEMPLATE.CData = iconRead(btnMarkTEMPLATE_imagePaths{(1)});
+% btnMarkTEMPLATE.Tooltip = 'Mark current frame TEMPLATE';
+% btnMarkTEMPLATE.ClickedCallback = @video_player_btn_MarkTEMPLATE_callback;
+	
+	%% Toggle MarkList
+	btnMarkList = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_MarkList');
+	btnMarkList_imagePaths = {'ListAdd.png', 'ListRemove.png'};
+	btnMarkList.CData = iconRead(btnMarkList_imagePaths{(1)});
+	btnMarkList.Tooltip = 'Mark current frame list member';
+	btnMarkList.ClickedCallback = @video_player_btn_MarkList_callback;
+		
+
     % Options: tool_legend.png
     % Question Mark - Red
     % plottype-hist3.gif
@@ -307,7 +351,16 @@ end % end function
     % plotpicker-pointfig.png
     % Log:
     % notesicon.gif
-    
+	% Save:
+	% file_save.png
+	% Open:
+	% file_open.png
+	% New:
+	% file_new.png
+    % Help:
+	% helpicon.gif
+	
+	
     %% Updates the state of the toolbar buttons:
     function video_player_update_custom_toolbar_buttons_appearance()
         curr_video_frame = get_video_frame();
@@ -325,7 +378,17 @@ end % end function
            final_is_marked_bad_index = 1;
         end
         btnMarkBad.CData = iconRead(btnMarkBad_imagePaths{final_is_marked_bad_index});
-        
+% 		btn_LogFrame.CData = iconRead(btn_LogFrame_imagePaths{(svp.userAnnotations.uaMan.DoesAnnotationExist('Log', curr_video_frame) + 1)});        
+		
+		btnMarkUnusual.CData = iconRead(btnMarkUnusual_imagePaths{(svp.userAnnotations.uaMan.DoesAnnotationExist('UnusualFrame', curr_video_frame) + 1)});
+		btnMarkNeedsReview.CData = iconRead(btnMarkNeedsReview_imagePaths{(svp.userAnnotations.uaMan.DoesAnnotationExist('NeedsReview', curr_video_frame) + 1)});
+		btnMarkTransition.CData = iconRead(btnMarkTransition_imagePaths{(svp.userAnnotations.uaMan.DoesAnnotationExist('EventChange', curr_video_frame) + 1)});
+		btnMarkList.CData = iconRead(btnMarkList_imagePaths{(svp.userAnnotations.uaMan.DoesAnnotationExist('AccumulatedListA', curr_video_frame) + 1)});
+
+% 		btnMarkTEMPLATE.CData = iconRead(btnMarkTEMPLATE_imagePaths{(svp.userAnnotations.uaMan.DoesAnnotationExist('UnusualFrame', curr_video_frame) + 1)});
+		
+		%% End Per-Frame buttons
+		
         % Pupil Overlay
 %         if svpSettings.shouldShowPupilOverlay
 
@@ -360,7 +423,8 @@ end % end function
            disp([num2str(curr_video_frame) ' is bad!']);
 		   svp.userAnnotations.uaMan.createAnnotation('BadUnspecified', curr_video_frame);
         else
-           disp([num2str(curr_video_frame) ' is good!']); 
+           disp([num2str(curr_video_frame) ' is good!']);
+		   svp.userAnnotations.uaMan.removeAnnotation('BadUnspecified', curr_video_frame);
         end
         
         % Set the new annotation value:
@@ -376,9 +440,39 @@ end % end function
         disp('btnLogFrame callback hit!');
         curr_video_frame = get_video_frame();
         disp(curr_video_frame);
-		isActive = svp.userAnnotations.uaMan.toggleAnnotation('BadUnspecified', curr_video_frame);
+		isActive = svp.userAnnotations.uaMan.toggleAnnotation('Log', curr_video_frame);
 		% TODO: update button from this?
-    end
+		video_player_update_custom_toolbar_buttons_appearance();
+	end
+
+	%% START NEW
+	function video_player_btn_MarkUnusual_callback(src, event)
+        curr_video_frame = get_video_frame();
+		isActive = svp.userAnnotations.uaMan.toggleAnnotation('UnusualFrame', curr_video_frame);
+		video_player_update_custom_toolbar_buttons_appearance();
+	end
+
+	function video_player_btn_MarkNeedsReview_callback(src, event)
+        curr_video_frame = get_video_frame();
+		isActive = svp.userAnnotations.uaMan.toggleAnnotation('NeedsReview', curr_video_frame);
+		video_player_update_custom_toolbar_buttons_appearance();
+	end
+
+	function video_player_btn_MarkTransition_callback(src, event)
+        curr_video_frame = get_video_frame();
+		isActive = svp.userAnnotations.uaMan.toggleAnnotation('EventChange', curr_video_frame);
+		video_player_update_custom_toolbar_buttons_appearance();
+	end
+
+	function video_player_btn_MarkList_callback(src, event)
+        curr_video_frame = get_video_frame();
+		isActive = svp.userAnnotations.uaMan.toggleAnnotation('AccumulatedListA', curr_video_frame);
+		video_player_update_custom_toolbar_buttons_appearance();
+	end
+
+	%% END NEW
+
+
       
     function video_player_btn_TogglePupilCircleOverlay_callback(src, event)
         disp('btnTogglePupilCircleOverlay_callback callback hit!');
@@ -413,8 +507,9 @@ end % end function
            % TODO: update button icon, refresh displayed plot
         end
         video_player_update_custom_toolbar_buttons_appearance();
-    end
+	end
     
+
     %% Get the info about the loaded video:
     svp.vidInfo.frameIndexes = svpConfig.DataPlot.x;
     svp.vidInfo.vidPlaySourceType = svp.vidPlayer.DataSource.Type;
@@ -547,7 +642,9 @@ end % end function
         svp.Slider.Value = curr_slider_frame; % Set the slider to the video frame
         if (svpSettings.shouldShowPairedFigure)
             dualcursor([curr_video_frame curr_video_frame]);
-        end
+		end
+		% update the toolbar buttons to reflect the new frame's status.
+		video_player_update_custom_toolbar_buttons_appearance();
     end
 
 %% Other UI Callbacks:
@@ -602,12 +699,7 @@ end % end function
         end
         
         % Update buttons:
-        
-        
-        
-        
-
-
+        video_player_update_custom_toolbar_buttons_appearance();
         
     end
 
@@ -637,8 +729,15 @@ end % end function
 %             h = viscircles(processedFramePupilInfo_Center(activeFrameIndex,:), processedFramePupilInfo_Radius(activeFrameIndex)); 
 %         end
         
-        
-    end
+        video_player_update_custom_toolbar_buttons_appearance();
+	end
+
+	%% Helpers:
+	function ptImage = get_matlab_internal_icon(filename)
+		% Takes an icon name with extension, like 'notesicon.gif'
+		[img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons',filename));
+		ptImage = ind2rgb(img,map);
+	end
 
 end
 

@@ -23,12 +23,12 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             obj.AnnotatingUser = annotatingUser;
 			
 			if (~exist('backingFilePath','var') || isempty(backingFilePath))
-				[file,name,path] = uiputfile('*.mat','User Annotations Backing File',['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat']);
-				if isequal(file,0) || isequal(path,0)
+				[filename,path,~] = uiputfile('*.mat','User Annotations Backing File',['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat']);
+				if isequal(filename,0) || isequal(path,0)
 				   error('User clicked Cancel.')
 				end
 %                 backingFilePath = 'UserAnnotationsBackingFile.mat';
-				backingFilePath = fullfile(path,file);
+				backingFilePath = fullfile(path,filename);
 			end
 						
             obj.UserAnnotationArrayNames = {};
@@ -125,6 +125,9 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 			if didRemove
 				isAnnotationActive = false;
 			else
+				if ~exist('comment','var')
+					comment = '';
+				end				
 				isAnnotationActive = obj.createAnnotation(typeName, frameNumber, comment);
 			end
 		end
@@ -181,6 +184,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 if isKey(obj.UserAnnotationObjMaps.(typeName),frameNumber)
                    % frame already exists
 				   remove(obj.UserAnnotationObjMaps.(typeName),frameNumber); % remove the frame
+				   TF = true;
 					if obj.BackingFile.shouldAutosaveToBackingFile
 						if ~obj.BackingFile.shouldAutosaveInTransactions
 							remove(obj.BackingFile.matFile.obj.UserAnnotationObjMaps.(typeName),frameNumber);
@@ -198,7 +202,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 % type doesn't yet exist
                 error('type does not exist!')
 			end
-			TF = true;
+			
             
 		end
 		
@@ -213,7 +217,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 				disp(['Opening existing backing file at ' obj.BackingFile.fullPath])
 				% TODO: load from backing file:
 				obj = UserAnnotationsManager.loadFromExistingBackingFile(obj.BackingFile.fullPath); % will this work?
-				error('Not yet finished!')
+				warning('Not yet finished!')
 			end
 			
 			obj.BackingFile.matFile = matfile(obj.BackingFile.fullPath,'Writable',true);
@@ -260,8 +264,14 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             array = obj.getAnnotationMap(typeName).keys;   
 		end
         
+        function doesAnnotationExist = DoesAnnotationExist(obj, typeName, frameNumber)
+            %doesAnnotationExist Returns true if an annotation exists at the specified frameNumber for a given typeName 
+		   doesAnnotationExist = isKey(obj.getAnnotationMap(typeName), frameNumber);
+		end
+		
+		
         function [annotation, doesAnnotationExist] = tryGetAnnotation(obj, typeName, frameNumber)
-            %METHOD1 Gets the array at a given typeName
+            %tryGetAnnotation Gets the array at a given typeName
             foundFrameAnnotationObjs = getAllAnnotationsForFrame(obj, frameNumber, {typeName});
 			
 			doesAnnotationExist = ~isempty(foundFrameAnnotationObjs);
@@ -271,8 +281,11 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 				annotation = {};
 			end
 			
-        end		
-        %% Aggregate and Combined:
+		end
+		
+		
+		
+		%% Aggregate and Combined:
         
         function foundFrameAnnotationObjs = getAllAnnotationsForFrame(obj, frameNumber, typeNames)
             %getAllAnnotationsForFrame Gets all annotations for the specified frameNumber
@@ -332,34 +345,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 		end  
 		 L = load(backingFilePath,'obj');
 		 obj = L.obj;
-      end
-	
-		function returnedFilePath = loadOrSaveDialog()
-			answer = questdlg('Specify you UserAnnotations options for this video', ...
-			'User Annotations Options', ...
-			'Load Existing','Create New','No thank you','Load Existing');
-			% Handle response
-			switch answer
-				case 'Load Existing'
-					disp([answer ' coming right up.'])
-					dessert = 1;
-				case 'Create New'
-					disp([answer ' coming right up.'])
-					[file,name,path] = uiputfile('*.mat','User Annotations Backing File',['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat']);
-					if isequal(file,0) || isequal(path,0)
-					   error('User clicked Cancel.')
-					   returnedFilePath = '';
-					else
-						returnedFilePath = fullfile(path,file);
-					end
-					
-
-				case 'No thank you'
-					disp('I''ll bring you your check.')
-					dessert = 0;
-			end % end switch
-
-		end % end function
+	  end
 	
 	end % end methods static
 	
