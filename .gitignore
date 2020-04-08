@@ -1,2 +1,6 @@
 *.asv
 **/.DS_Store
+*.m~
+vidFileTest.mat
+UserAnnotationsBackingFile.mat
+UAnnotations-dev_testing.mat
