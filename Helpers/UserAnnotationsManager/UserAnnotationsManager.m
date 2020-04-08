@@ -217,7 +217,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 				disp(['Opening existing backing file at ' obj.BackingFile.fullPath])
 				% TODO: load from backing file:
 				obj = UserAnnotationsManager.loadFromExistingBackingFile(obj.BackingFile.fullPath); % will this work?
-				warning('Not yet finished!')
+				error('Not yet finished!')
 			end
 			
 			obj.BackingFile.matFile = matfile(obj.BackingFile.fullPath,'Writable',true);

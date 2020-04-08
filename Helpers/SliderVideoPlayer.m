@@ -88,34 +88,38 @@ if ~exist('svp.userAnnotations','var')
    [willCreateNew, shouldUseUserAnnotations, returnedFilePath] = userAnnotationsOptionsDialog();
    svpConfig.UserAnnotationsOptions.uaFilepath = returnedFilePath;
    if shouldUseUserAnnotations
+		
+	if willCreateNew
 	   if enable_dev_testing
 		outputAbsoluteUniqueVideoIDString = 'dev_testing';             
 	   else
 		outputAbsoluteUniqueVideoIDString = GenerateAbsoluteVideoIdentifier(svpConfig.VidPlayer.videoSource);
-	   end
-		  
-		
+	   end			
 		svp.userAnnotations.uaMan = UserAnnotationsManager(outputAbsoluteUniqueVideoIDString, svp.userAnnotations.numFrames, 'Pho', svpConfig.UserAnnotationsOptions.uaFilepath);
-		svpConfig.UserAnnotationsOptions.uaFilepath = svp.userAnnotations.uaMan.BackingFile.fullPath; % Update path in case the user selected a new one
-		
-		if willCreateNew
-			svp.userAnnotations.uaMan.addAnnotationType('BadPupilCenterOffset');
-			svp.userAnnotations.uaMan.addAnnotationType('BadPupilSize');
-			svp.userAnnotations.uaMan.addAnnotationType('BadEyePolyShape');
-			svp.userAnnotations.uaMan.addAnnotationType('BadUnspecified');
 
-			svp.userAnnotations.uaMan.addAnnotationType('UnusualFrame');
-			svp.userAnnotations.uaMan.addAnnotationType('EventChange');
-			svp.userAnnotations.uaMan.addAnnotationType('NeedsReview');
-			
-			svp.userAnnotations.uaMan.addAnnotationType('Log');
-			svp.userAnnotations.uaMan.addAnnotationType('AccumulatedListA');
-		end
+		svp.userAnnotations.uaMan.addAnnotationType('BadPupilCenterOffset');
+		svp.userAnnotations.uaMan.addAnnotationType('BadPupilSize');
+		svp.userAnnotations.uaMan.addAnnotationType('BadEyePolyShape');
+		svp.userAnnotations.uaMan.addAnnotationType('BadUnspecified');
 
-   else
+		svp.userAnnotations.uaMan.addAnnotationType('UnusualFrame');
+		svp.userAnnotations.uaMan.addAnnotationType('EventChange');
+		svp.userAnnotations.uaMan.addAnnotationType('NeedsReview');
+
+		svp.userAnnotations.uaMan.addAnnotationType('Log');
+		svp.userAnnotations.uaMan.addAnnotationType('AccumulatedListA');
+
+	else
+		% Loading existing:
+		svp.userAnnotations.uaMan = UserAnnotationsManager.loadFromExistingBackingFile(svpConfig.UserAnnotationsOptions.uaFilepath);
+
+	end
+	svpConfig.UserAnnotationsOptions.uaFilepath = svp.userAnnotations.uaMan.BackingFile.fullPath; % Update path in case the user selected a new one
+
+	else
 	   %% TODO: disable all the buttons if they don't want annotations:
-	   
-   end
+		error('Not currently implemented!')
+	end
    
 end
 
@@ -301,8 +305,6 @@ end % end function
 
     %% Log Frame
     btn_LogFrame = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_LogFrame');
-%     [img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons','notesicon.gif'));
-%     ptImage = ind2rgb(img,map);
     btn_LogFrame.CData = get_matlab_internal_icon('notesicon.gif');
     btn_LogFrame.Tooltip = 'Log current frame out to command window';
     btn_LogFrame.ClickedCallback = @video_player_btn_LogFrame_callback;
