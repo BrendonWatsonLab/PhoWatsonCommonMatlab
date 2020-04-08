@@ -36,7 +36,7 @@ global svp;
 %     
 % end
 
-enable_dev_testing = false;
+enable_dev_testing = true;
 if enable_dev_testing
     frameIndexes = 1:1000;
     greyscale_frames = zeros(512,640,length(frameIndexes));
@@ -72,6 +72,7 @@ if ~exist('svpConfig','var')
       % Otherwise try to load from URLS:
       svpConfig.VidPlayer.videoSource = greyscale_frames; % From workspace variable
    end
+
    disp("Done. Continuing.")
 end
 
@@ -80,13 +81,85 @@ if ~exist('svp.userAnnotations','var')
    disp("svp.userAnnotations doesn't exist!")
    % Create new userAnnotations:
    svp.userAnnotations.frames = svpConfig.DataPlot.x;
-   svp.userAnnotations.isMarkedBad = zeros(length(svp.userAnnotations.frames),1,'logical');
+   svp.userAnnotations.numFrames = length(svp.userAnnotations.frames);
+   svp.userAnnotations.isMarkedBad = zeros(svp.userAnnotations.numFrames,1,'logical');
    
-   svp.userAnnotations.accumulatedList = {};
-   
-   
+
+   [willCreateNew, shouldUseUserAnnotations, returnedFilePath] = userAnnotationsOptionsDialog();
+   svpConfig.UserAnnotationsOptions.uaFilepath = returnedFilePath;
+   if shouldUseUserAnnotations
+	   if enable_dev_testing
+		outputAbsoluteUniqueVideoIDString = 'enable_dev_testing';             
+	   else
+		outputAbsoluteUniqueVideoIDString = GenerateAbsoluteVideoIdentifier(svpConfig.VidPlayer.videoSource);
+	   end
+		  
+		
+		svp.userAnnotations.uaMan = UserAnnotationsManager(outputAbsoluteUniqueVideoIDString, svp.userAnnotations.numFrames, 'Pho', svpConfig.UserAnnotationsOptions.uaFilepath);
+		svpConfig.UserAnnotationsOptions.uaFilepath = svp.userAnnotations.uaMan.BackingFile.fullPath; % Update path in case the user selected a new one
+		
+		if willCreateNew
+			svp.userAnnotations.uaMan.addAnnotationType('BadPupilCenterOffset');
+			svp.userAnnotations.uaMan.addAnnotationType('BadPupilSize');
+			svp.userAnnotations.uaMan.addAnnotationType('BadEyePolyShape');
+			svp.userAnnotations.uaMan.addAnnotationType('BadUnspecified');
+
+			svp.userAnnotations.uaMan.addAnnotationType('UnusualFrame');
+			svp.userAnnotations.uaMan.addAnnotationType('EventChange');
+			svp.userAnnotations.uaMan.addAnnotationType('NeedsReview');
+		end
+
+   else
+	   %% TODO: disable all the buttons if they don't want annotations:
+	   
+   end
    
 end
+
+
+
+function [willCreateNew, shouldUseUserAnnotations, returnedFilePath] = userAnnotationsOptionsDialog()
+	% Asks the user whether to load an existing user annotations file, create a new one, or go on without annotations.
+	answer = questdlg('Specify you UserAnnotations options for this video', ...
+	'User Annotations Options', ...
+	'Load Existing','Create New','No thank you','Load Existing');
+	% Handle response
+	shouldUseUserAnnotations = true;
+	willCreateNew = false;
+	switch answer
+		case 'Load Existing'
+			disp([answer '...'])
+		   [file,path] = uigetfile('*.mat','Select an existing user annotations file, or cancel to make a new one');
+			if isequal(file,0)
+			   disp('User selected Cancel');
+			else
+			   disp(['User selected ', fullfile(path,file)]);
+			   returnedFilePath = fullfile(path,file);
+			end
+			
+		case 'Create New'
+			disp([answer '...'])
+% 			[file,name,path] = uiputfile('*.mat','User Annotations Backing File',['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat']);
+% 			if isequal(file,0) || isequal(path,0)
+% 			   error('User clicked Cancel.')
+% 			   returnedFilePath = '';
+% 			else
+% 				returnedFilePath = fullfile(path,file);
+% 				
+% 			end
+		returnedFilePath = ''; % By setting this to empty, the UserAnnotationManager initializer will ask where to create the file
+		willCreateNew = true;
+
+		case 'No thank you'
+			disp('Skipping user annotations')
+			returnedFilePath = '';
+			shouldUseUserAnnotations = false;
+	end % end switch
+
+end % end function
+	
+
+
 
     % Load config:
     svpSettings.shouldAdjustSpawnPosition = false;
@@ -240,7 +313,11 @@ end
         curr_video_frame = get_video_frame();
         
         % User Marked Bad:
-        final_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+%         final_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+		
+		[~, doesAnnotationExist] = svp.userAnnotations.uaMan.tryGetAnnotation('BadUnspecified', curr_video_frame);
+		final_is_marked_bad = doesAnnotationExist;
+		
         final_is_marked_bad_index = 0;
         if final_is_marked_bad
            final_is_marked_bad_index = 2;
@@ -248,7 +325,6 @@ end
            final_is_marked_bad_index = 1;
         end
         btnMarkBad.CData = iconRead(btnMarkBad_imagePaths{final_is_marked_bad_index});
-        
         
         % Pupil Overlay
 %         if svpSettings.shouldShowPupilOverlay
@@ -274,17 +350,21 @@ end
         curr_video_frame = get_video_frame();
         
         % Get current user annotations:
-        curr_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+%         curr_is_marked_bad = svp.userAnnotations.isMarkedBad(curr_video_frame);
+		[~, doesAnnotationExist] = svp.userAnnotations.uaMan.tryGetAnnotation('BadUnspecified', curr_video_frame);
+		curr_is_marked_bad = doesAnnotationExist;
+		
         updated_is_marked_bad = ~curr_is_marked_bad;
         
         if updated_is_marked_bad
-           disp([num2str(curr_video_frame) ' is bad!']); 
+           disp([num2str(curr_video_frame) ' is bad!']);
+		   svp.userAnnotations.uaMan.createAnnotation('BadUnspecified', curr_video_frame);
         else
            disp([num2str(curr_video_frame) ' is good!']); 
         end
         
         % Set the new annotation value:
-        svp.userAnnotations.isMarkedBad(curr_video_frame) = updated_is_marked_bad;
+%         svp.userAnnotations.isMarkedBad(curr_video_frame) = updated_is_marked_bad;
         
         % Update Display: Ready to be potentially factored out into its own
         % function.
@@ -296,6 +376,8 @@ end
         disp('btnLogFrame callback hit!');
         curr_video_frame = get_video_frame();
         disp(curr_video_frame);
+		isActive = svp.userAnnotations.uaMan.toggleAnnotation('BadUnspecified', curr_video_frame);
+		% TODO: update button from this?
     end
       
     function video_player_btn_TogglePupilCircleOverlay_callback(src, event)
@@ -334,7 +416,6 @@ end
     end
     
     %% Get the info about the loaded video:
-    %vidPlayer.DataSource.Controls.CurrentFrame
     svp.vidInfo.frameIndexes = svpConfig.DataPlot.x;
     svp.vidInfo.vidPlaySourceType = svp.vidPlayer.DataSource.Type;
     if svp.vidInfo.vidPlaySourceType == "Workspace"

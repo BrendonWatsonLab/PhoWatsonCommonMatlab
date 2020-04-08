@@ -22,9 +22,14 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             end  
             obj.AnnotatingUser = annotatingUser;
 			
-			if ~exist('backingFilePath','var')
-                backingFilePath = 'UserAnnotationsBackingFile.mat';
-            end  
+			if (~exist('backingFilePath','var') || isempty(backingFilePath))
+				[file,name,path] = uiputfile('*.mat','User Annotations Backing File',['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat']);
+				if isequal(file,0) || isequal(path,0)
+				   error('User clicked Cancel.')
+				end
+%                 backingFilePath = 'UserAnnotationsBackingFile.mat';
+				backingFilePath = fullfile(path,file);
+			end
 						
             obj.UserAnnotationArrayNames = {};
             obj.UserAnnotationArrayDescriptions = {};
@@ -114,8 +119,19 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
         end
         
         %% Annotation Objects:
-        function createAnnotation(obj, typeName, frameNumber, comment)
+		function isAnnotationActive = toggleAnnotation(obj, typeName, frameNumber, comment)
+		% toggles the annotation on or off by deleting it. Note when deleting it the comment is lost.
+			didRemove = obj.removeAnnotation(typeName, frameNumber);
+			if didRemove
+				isAnnotationActive = false;
+			else
+				isAnnotationActive = obj.createAnnotation(typeName, frameNumber, comment);
+			end
+		end
+		
+        function TF = createAnnotation(obj, typeName, frameNumber, comment)
             %createAnnotation Adds a new annotation object to an existing typeArray
+			% returns true if it was created.
             if ~exist('frameNumber','var')
                 error('Requires the frameNumber!')
             end
@@ -129,10 +145,12 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 if isKey(obj.UserAnnotationObjMaps.(typeName),frameNumber)
                    % frame already exists
                    obj.UserAnnotationObjMaps.(typeName)(frameNumber).modifyComment(comment);
+				   TF = false;
                 else
                    % frame does not yet exist
                    newAnnotationObj = UserAnnotation(frameNumber, comment, obj.AnnotatingUser);
                    obj.UserAnnotationObjMaps.(typeName)(frameNumber) = newAnnotationObj;
+				   TF = true;
 				end
 				
 				if obj.BackingFile.shouldAutosaveToBackingFile
@@ -150,8 +168,9 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
         end
         
-        function removeAnnotation(obj, typeName, frameNumber)
+        function TF = removeAnnotation(obj, typeName, frameNumber)
             %removeAnnotation Removes an existing annotation object at a given frameNumber for an existing typeArray
+			% returns true if it was removed.
             if ~exist('frameNumber','var')
                 error('Requires the frameNumber!')
             end
@@ -173,11 +192,13 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
                 else
                    % frame does not yet exist
 					warning('frame does not exist!')
+					TF = false;
                 end
             else
-                % type doesn't yet exist, create it
+                % type doesn't yet exist
                 error('type does not exist!')
-            end
+			end
+			TF = true;
             
 		end
 		
@@ -191,6 +212,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 			else
 				disp(['Opening existing backing file at ' obj.BackingFile.fullPath])
 				% TODO: load from backing file:
+				obj = UserAnnotationsManager.loadFromExistingBackingFile(obj.BackingFile.fullPath); % will this work?
 				error('Not yet finished!')
 			end
 			
@@ -212,6 +234,10 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 % 			obj.BackingFile.matFile.obj = obj;
 		end
 		
+		function saveToUserSelectableCopyMat(obj)
+			% allows the user to select a file path to save a copy of the current annotation object out to a .mat file.
+			uisave({'obj'},['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat'])
+		end
         
         %% Getters:
         function name = getAnnotationName(obj, idx)
@@ -220,7 +246,7 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
         end
         
         function map = getAnnotationMap(obj, typeName)
-            %METHOD1 Gets the array at a given typeName
+            %getAnnotationMap Gets the map at a given typeName
             map = obj.UserAnnotationObjMaps.(typeName);   
         end
         
@@ -232,12 +258,24 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
         function array = getAnnotationsFrames(obj, typeName)
             %METHOD1 Gets the array at a given typeName
             array = obj.getAnnotationMap(typeName).keys;   
-        end
+		end
         
+        function [annotation, doesAnnotationExist] = tryGetAnnotation(obj, typeName, frameNumber)
+            %METHOD1 Gets the array at a given typeName
+            foundFrameAnnotationObjs = getAllAnnotationsForFrame(obj, frameNumber, {typeName});
+			
+			doesAnnotationExist = ~isempty(foundFrameAnnotationObjs);
+			if doesAnnotationExist
+				annotation = foundFrameAnnotationObjs{1};
+			else
+				annotation = {};
+			end
+			
+        end		
         %% Aggregate and Combined:
         
         function foundFrameAnnotationObjs = getAllAnnotationsForFrame(obj, frameNumber, typeNames)
-            %METHOD1 Gets all annotations for the specified frameNumber
+            %getAllAnnotationsForFrame Gets all annotations for the specified frameNumber
             %that are of the types listed in typeNames, or all if
             %unspecified.
             if ~exist('frameNumber','var')
@@ -246,8 +284,10 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
             
             if ~exist('typeNames','var')
                 typeNames = obj.UserAnnotationArrayNames;
-            end
+			end
             
+			foundFrameAnnotationObjs = {};
+			
             for i=1:length(typeNames)
                currTypeName = typeNames{i};
                currAnnotationMap = obj.getAnnotationMap(currTypeName);
@@ -293,6 +333,35 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 		 L = load(backingFilePath,'obj');
 		 obj = L.obj;
       end
-	end
+	
+		function returnedFilePath = loadOrSaveDialog()
+			answer = questdlg('Specify you UserAnnotations options for this video', ...
+			'User Annotations Options', ...
+			'Load Existing','Create New','No thank you','Load Existing');
+			% Handle response
+			switch answer
+				case 'Load Existing'
+					disp([answer ' coming right up.'])
+					dessert = 1;
+				case 'Create New'
+					disp([answer ' coming right up.'])
+					[file,name,path] = uiputfile('*.mat','User Annotations Backing File',['UAnnotations-', currVideoFileInfo.videoFileIdentifier, '.mat']);
+					if isequal(file,0) || isequal(path,0)
+					   error('User clicked Cancel.')
+					   returnedFilePath = '';
+					else
+						returnedFilePath = fullfile(path,file);
+					end
+					
+
+				case 'No thank you'
+					disp('I''ll bring you your check.')
+					dessert = 0;
+			end % end switch
+
+		end % end function
+	
+	end % end methods static
+	
 end
 
