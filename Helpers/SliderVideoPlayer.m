@@ -293,6 +293,13 @@ end % end function
     btn_ToggleEyePolyOverlay.Tooltip = 'Toggle the eye polygon area on or off';
     btn_ToggleEyePolyOverlay.ClickedCallback = @video_player_btn_ToggleEyePolyOverlay_callback;
     
+	%% Save User Annotations File
+    btn_SaveUserAnnotations = uipushtool(svp.vidCustomToolbar,'Tag','uimgr.uipushtool_SaveUserAnnotations');
+    btn_SaveUserAnnotations.CData = iconRead('file_save.png');
+    btn_SaveUserAnnotations.Tooltip = 'Save current user annotations out to the pre-specified .MAT file';
+    btn_SaveUserAnnotations.ClickedCallback = @video_player_btn_SaveUserAnnotations_callback;
+	
+	
 	%% Frame Buttons:
 	
 	%% Toggle MarkBad
@@ -362,6 +369,8 @@ end % end function
     % Help:
 	% helpicon.gif
 	
+
+	
 	
     %% Updates the state of the toolbar buttons:
     function video_player_update_custom_toolbar_buttons_appearance()
@@ -408,7 +417,16 @@ end % end function
 %         end
         btn_ToggleEyePolyOverlay.CData = iconRead(btn_ToggleEyePolyOverlay_imagePaths{(svpSettings.shouldShowEyePolygonOverlay + 1)});
         
-    end
+	end
+
+	% SaveUserAnnotations
+	function video_player_btn_SaveUserAnnotations_callback(src, event)
+		disp('Saving out to file...')
+		svp.userAnnotations.uaMan.saveToBackingFile();
+		disp('Done')
+		%svp.userAnnotations.uaMan.saveToUserSelectableCopyMat()
+		
+	end
     
     function video_player_btn_MarkBad_callback(src, event)
         disp('btnMarkBad callback hit!');
@@ -563,6 +581,10 @@ end % end function
     svp.Slider.Units = "normalized"; %Change slider units to normalized so that it scales with the video window.
     addlistener(svp.Slider, 'Value', 'PostSet', @slider_post_update_function);
 
+	
+		
+	% When all done, call the update function to ensure the UI is up to date:
+	video_player_update_custom_toolbar_buttons_appearance();
 
 
 %% Button Callbacks: buttonNames = {"btnJumpTo","btnGotoEnd","btnStepFwd","btnFFwd","btnPlayPause","btnStop","btnRewind","btnStepBack","btnGotoStart"};
@@ -737,8 +759,19 @@ end % end function
 	%% Helpers:
 	function ptImage = get_matlab_internal_icon(filename)
 		% Takes an icon name with extension, like 'notesicon.gif'
-		[img,map] = imread(fullfile(matlabroot,'toolbox','matlab','icons',filename));
-		ptImage = ind2rgb(img,map);
+		filePath = fullfile(matlabroot,'toolbox','matlab','icons', filename);
+		[~,~,fileExtension] = fileparts(filename);
+		if strcmpi(fileExtension,'.gif')
+			[img,map] = imread(filePath);
+			ptImage = ind2rgb(img,map);
+			
+		elseif strcmpi(fileExtension,'.png')
+			ptImage = iconRead(filePath);
+		else
+			warning('Unhandled icon type!')
+			[img,map] = imread(filePath);
+			ptImage = ind2rgb(img,map);
+		end
 	end
 
 end
