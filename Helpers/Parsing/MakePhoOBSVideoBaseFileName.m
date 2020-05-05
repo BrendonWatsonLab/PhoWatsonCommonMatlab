@@ -1,6 +1,7 @@
 function [OBSVideoBasename] = MakePhoOBSVideoBaseFileName(boxIdentifier, datetime)
-%MakePhoOBSVideoFileName Parses the name of a OBS-recorded video file (the format created 7/25/2019 by Pho Hale)
-%   Detailed explanation goes
+%MakePhoOBSVideoFileName builds an OBS-recorded video style filename (the format created 7/25/2019 by Pho Hale) out of a boxID and a datetime. This function is the inverse of ParsePhoOBSVideoBaseFileName(...) 
+%	boxIdentifier: a BBID string '05' for BB05 or '14' for BB14.
+%   datetime: a matlab datetime object.
 
 format long g
 
