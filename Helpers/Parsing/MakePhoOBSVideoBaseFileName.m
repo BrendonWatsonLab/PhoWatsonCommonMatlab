@@ -3,6 +3,8 @@ function [OBSVideoBasename] = MakePhoOBSVideoBaseFileName(boxIdentifier, datetim
 %	boxIdentifier: a BBID string '05' for BB05 or '14' for BB14.
 %   datetime: a matlab datetime object.
 
+%BehavioralBox_B06_T20200228-2157430477.mkv
+
 format long g
 
 % BehavioralBox_B00_T%NANOSEC
@@ -14,9 +16,9 @@ format long g
 % videoFile.dateTime = datetime(videoFile.nanosecondsTimestampValue/1e9,'convertFrom','posixtime');
 
 % temp.outDateString = datestr(datetime, 'yyyyMMdd''T''HHmmssSSS');
-temp.outDateDayString = datestr(datetime, 'yyyyMMdd');
+temp.outDateDayString = datestr(datetime, 'yyyymmdd');
 % temp.outDateTimeString = datestr(datetime, 'HHmmssSSS');
-temp.outDateTimeString = datestr(datetime, 'HHmmssFFF');
+temp.outDateTimeString = datestr(datetime, 'HHMMSSFFF');
 
 
 % temp.combinedVideoDateString = tokenNames.DatePortion + "T" + tokenNames.TimePortion;
