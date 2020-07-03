@@ -1,6 +1,7 @@
 classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
     %FramesListManager Keeps track of user-annotated frames in a class
     %   Holds an array of UserAnnotation objects
+	% This file is used by SliderVideoPlayer to keep track of a list of annotations
     
     properties
         VideoFileInfo
@@ -228,14 +229,11 @@ classdef UserAnnotationsManager < handle & matlab.mixin.CustomDisplay
 		
 		function createBackingFile(obj)
 			save(obj.BackingFile.fullPath,'obj','-v7.3');
-% 			save(obj.BackingFile.fullPath,'-append', obj);
 		end
 		
 		
 		function saveToBackingFile(obj)
-			%save(obj.BackingFile.fullPath,'obj','-v7.3');
 			save(obj.BackingFile.fullPath,'obj','-v7.3');
-% 			obj.BackingFile.matFile.obj = obj;
 		end
 		
 		function saveToUserSelectableCopyMat(obj)

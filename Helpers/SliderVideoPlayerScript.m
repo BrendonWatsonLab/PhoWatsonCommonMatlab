@@ -15,7 +15,6 @@ svpSettings.sliderMinorStep = 0.1;
 %% Plot Window:
 svp.DataPlot.fig = figure(1);
 clf
-% svp.DataPlot.plotH = plot(frameIndexes, region_mean_per_frame_smoothed);
 svp.DataPlot.plotH = plot(frameIndexes, temp);
 xlabel('Frame Index');
 title('Region Intensity');
@@ -32,7 +31,6 @@ dualcursor('onlyOneCursor');
 svp.vidPlayer = implay(curr_video_file.full_path, v.FrameRate);
 spawnPosition = svp.vidPlayer.Parent.Position;
 set(svp.vidPlayer.Parent, 'Position',  [180, 300, 867, 883])
-%set(svp.vidPlayer.Parent, 'Position',  [spawnPosition(1), spawnPosition(2), 867, 883])
 
 % svp.vidPlayer.resi
 % svp.vidPlayer.addlistener(vidPlayCallbacks.FrameUpdate);
@@ -93,7 +91,6 @@ function output_txt = slider_post_update_function(src, event_obj)
     % event_obj    Object containing event data structure
     % Play the video here:
     % Get the frame from the slider:
-%     updatedFrame = get(event_obj,'NewValue');
 
     % the slider is the frame number from 1 - length, not the currently loaded indexes
     slider_frame = round(event_obj.AffectedObject.Value);

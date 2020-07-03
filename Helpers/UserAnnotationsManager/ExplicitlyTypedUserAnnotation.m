@@ -2,6 +2,7 @@ classdef ExplicitlyTypedUserAnnotation < UserAnnotation
     %ExplicitlyTypedUserAnnotation A user-created annotation with an
     %explicit type
     %   Has a specified FrameNumber
+	% Used by UserAnnotationsManager
     
     properties
         typeName
