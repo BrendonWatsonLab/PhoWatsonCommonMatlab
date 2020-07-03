@@ -46,7 +46,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 			if ~did_load_successfully
 				% Selections didn't already exist, creating a new group
 				disp(['Selections with name ', desiredSelectionName, ' did not already exist in the workspace selections index, so new ones were created.'])
-				[old_selection] = iips_ResetSelection(desiredSelectionName);
+				[old_selection] = iips_ResetSelection(desiredSelectionName, false);
 				iips_State.current_selection_name = desiredSelectionName;
 			else
 				disp(['Selections with name ', desiredSelectionName, ' already exist in the workspace selections index, and were loaded!'])
@@ -290,12 +290,21 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 	end
 
 	% Performs a complete reset of the selection.
-	function [old_selection] = iips_ResetSelection(proposedNewSelectionName)
+	function [old_selection] = iips_ResetSelection(proposedNewSelectionName, shouldExportPreviousSelection)
 		if ~exist('proposedNewSelectionName','var')
 			proposedNewSelectionName = 'NoNameSpecified';
 		end
-		disp('Exporting last selection...')
-		old_selection = iips_GetExportSelectionFcn();
+		
+		if ~exist('shouldExportPreviousSelection','var')
+			shouldExportPreviousSelection = true;
+		end
+		
+		if shouldExportPreviousSelection
+			disp('Exporting last selection...')
+			old_selection = iips_GetExportSelectionFcn();
+		else
+			old_selection = [];
+		end
 		
 		disp('Resetting selection...')
 		iips_State.pixel_selection_mask = zeros(iips_State.curr_image_size);
@@ -403,7 +412,8 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 		   iips_LoadedSelectionOutput = evalin('base', 'iips_ExportedSelectionOutput');
 		catch ME
 			loaded_selections = [];
-		   if (strcmp(ME.identifier,'MATLAB:UndefinedFunction'))
+		    found_extant_selection_index = -1;
+			if (strcmp(ME.identifier,'MATLAB:UndefinedFunction'))
 			  % Handled exception
 			  % iips_ExportedSelectionOutput does not existin base
 			  disp('iips_ExportedSelectionOutput does not exist in base workspace. Could not load')
@@ -430,6 +440,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 			if ~exist('found_extant_selection_index','var')
 				% If we never found a matching index
 				loaded_selections = [];
+				found_extant_selection_index = -1;
 				return; % We're done here, return.
 				
 			else
@@ -443,6 +454,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 			% Doesn't exist
 			disp('iips_ExportedSelectionOutput does not exist in workspace! Could not load it')
 			loaded_selections = [];
+			found_extant_selection_index = -1;
 			return;
 		end
 		
