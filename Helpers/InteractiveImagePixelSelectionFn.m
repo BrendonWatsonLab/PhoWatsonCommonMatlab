@@ -6,6 +6,7 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 		% [Spacebar]: toggle between paint and erase modes.
 		% [x]: export the selected region
 		% [.]: reset the selection (start a new selection). The user is prompted first
+		% [l]: list current selection groups
 
 		
 		
@@ -141,6 +142,7 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 		% [Spacebar]: toggle between paint and erase modes.
 		% [x]: export the selected region
 		% [.]: reset the selection (start a new selection). The user is prompted first
+		% [l]: list current selection groups
 		
 		% Other key ideas:
 		% 'end', 
@@ -165,6 +167,22 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 			elseif strcmp(eventData.Key, 'period') | strcmp(eventData.Key, 'r')
 				% Exports Selection
 				userPromptForChangingSelection();
+				
+			elseif strcmp(eventData.Key, 'l')
+				% Lists the current groups:
+				% Export first before loading:
+				iips_GetExportSelectionFcn();
+				[did_load_from_workspace_successfully, iips_FinalLoadedAllSelections] = iips_TryGetSelectionList();
+				if did_load_from_workspace_successfully
+					disp('Current Selection List names:')
+					% Loop through and try to find the index of the extant item:
+					for i = 1:length(iips_FinalLoadedAllSelections.selectionNames)
+						fprintf('\t %s\n', iips_FinalLoadedAllSelections.selectionNames{i});
+					end
+
+				else
+					disp('Failed to load iips_LoadedSelectionOutput from workspace!')
+				end
 				
 			end
 		end
@@ -403,6 +421,30 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 
 	end
 
+
+	% Tries to load iips_LoadedSelectionOutput from the iips_ExportedSelectionOutput variable in the base workspace:
+	function [did_load_successfully, iips_FinalLoadedAllSelections] = iips_TryGetSelectionList()
+		did_load_successfully = false;
+		try
+		   iips_FinalLoadedAllSelections = evalin('base', 'iips_ExportedSelectionOutput');
+		   did_load_successfully = true;
+		catch ME
+			iips_FinalLoadedAllSelections = {};
+			if (strcmp(ME.identifier,'MATLAB:UndefinedFunction'))
+			  % Handled exception
+			  % iips_ExportedSelectionOutput does not existin base
+				disp('iips_ExportedSelectionOutput does not exist in base workspace. Could not load')
+				return; % We're done here, just return.
+		   else
+			   disp('Unhandled exception:')
+			   rethrow(ME)
+		   end
+
+		end % End try/catch 
+
+	end
+
+
 	% Tries to load the selection set with the given selectionName from the base workspace
 	function [did_load_successfully, loaded_selections, found_extant_selection_index] = iips_TryLoadSelection(selectionName)
 		% Tries to load it from the iips_ExportedSelectionOutput variable in the base workspace:
@@ -416,7 +458,7 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 			if (strcmp(ME.identifier,'MATLAB:UndefinedFunction'))
 			  % Handled exception
 			  % iips_ExportedSelectionOutput does not existin base
-			  disp('iips_ExportedSelectionOutput does not exist in base workspace. Could not load')
+				disp('iips_ExportedSelectionOutput does not exist in base workspace. Could not load')
 				return; % We're done here, just return.
 		   else
 			   disp('Unhandled exception:')
@@ -541,7 +583,7 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 			   
 		   end
 
-		end 
+		end % end try/catch
 
 		if exist('iips_ExportedSelectionOutput','var')
 			iips_FinalAllSelectionsOutput = iips_ExportedSelectionOutput;
@@ -572,6 +614,9 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 			iips_FinalAllSelectionsOutput.selections = {iips_SelectionOutput};
 			
 		end
+		
+		% Build the map for the output file, overwritting any extant one.
+		iips_FinalAllSelectionsOutput.nameToIndexMap = containers.Map(iips_FinalAllSelectionsOutput.selectionNames', 1:length(iips_FinalAllSelectionsOutput.selectionNames));
 		
 		assignin('base','iips_ExportedSelectionOutput', iips_FinalAllSelectionsOutput);
 		%disp('Exported current selection to iips_ExportedSelectionOutput variable in workspace!')
