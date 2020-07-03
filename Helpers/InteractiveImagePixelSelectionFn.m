@@ -1,4 +1,4 @@
-function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixelSelectionFn(desiredSelectionName)
+function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSelectionName)
 %INTERACTIVEIMAGEPIXELSELECTIONFN Enables the user to "paint" the current plot in a binary fashion to select or deselect pixels.
 %% INPUT:
 	% The user can press:
@@ -75,7 +75,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 % 	end
 	
 	% Get initial selection output
-	iips_SelectionOutput = iips_GetExportSelectionFcn();
+	iips_GetExportSelectionFcn();
 		
 	%% Start nested functions:
 	
@@ -159,7 +159,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 				
 			elseif strcmp(eventData.Key, 'x') | strcmp(eventData.Key, 'p')
 				% Exports Selection
-				iips_SelectionOutput = iips_GetExportSelectionFcn();
+				iips_GetExportSelectionFcn();
 				disp('Exported current selection to iips_ExportedSelectionOutput variable in workspace!')
 				
 			elseif strcmp(eventData.Key, 'period') | strcmp(eventData.Key, 'r')
@@ -315,7 +315,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 		iips_State.lastHoveredPixel = '';
 		iips_State.current_selection_name = proposedNewSelectionName;
 		iips_State.current_selection_context = iips_State.curr_axes.Title.String; % Get the context from the current image
-		iips_SelectionOutput = iips_GetExportSelectionFcn(); % Update new selection output
+		iips_GetExportSelectionFcn(); % Update new selection output
 		disp('\t done.')
 	end
 
@@ -354,7 +354,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 		set(iips_State.visualization.overlayHandle, 'AlphaData', (iips_State.pixel_selection_mask .* iips_Config.overlayAlpha));
 		drawnow
 		
-		iips_SelectionOutput = iips_GetExportSelectionFcn();
+% 		iips_SelectionOutput = iips_GetExportSelectionFcn();
 	end
 
 
@@ -472,7 +472,7 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 		iips_State.lastHoveredPixel = '';
 		iips_State.current_selection_name = loadedSelections.name;
 		iips_State.current_selection_context = iips_State.curr_axes.Title.String; % Get the context from the current image
-		iips_SelectionOutput = iips_GetExportSelectionFcn(); % Update new selection output
+% 		iips_SelectionOutput = iips_GetExportSelectionFcn(); % Update new selection output
 		disp('\t done.')
 	end
 
@@ -543,7 +543,6 @@ function [iips_Config, iips_State, iips_SelectionOutput] = InteractiveImagePixel
 
 		end 
 
-		
 		if exist('iips_ExportedSelectionOutput','var')
 			iips_FinalAllSelectionsOutput = iips_ExportedSelectionOutput;
 			

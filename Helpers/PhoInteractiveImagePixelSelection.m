@@ -21,7 +21,7 @@
 % Reset:
 % clear iips_State
 
-[new_iips_Config, new_iips_State, new_iips_SelectionOutput] = InteractiveImagePixelSelectionFn();
+[new_iips_Config, new_iips_State] = InteractiveImagePixelSelectionFn();
 
 
 % TODO: Check if it's still a valid figure and graphics object:
