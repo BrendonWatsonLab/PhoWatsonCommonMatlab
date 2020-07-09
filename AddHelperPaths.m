@@ -5,7 +5,7 @@
 
 addpath('Helpers');
 helperNamesGenPath = {'Parsing', 'Filesystem', 'Export', 'MatlabMeta', 'Dual-Cursors', ...
-    'UX', 'UserAnnotationsManager'};
+    'UX', 'UserAnnotationsManager', 'ComputerVision', 'Plotting', 'Naming'};
 helperNames = {'DateTime', ['DateTime/datestr8601']};
 
 for i=1:length(helperNames)
