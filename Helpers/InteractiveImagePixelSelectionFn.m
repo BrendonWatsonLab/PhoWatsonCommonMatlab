@@ -76,6 +76,9 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 	% Get initial selection output
 	iips_GetExportSelectionFcn();
 		
+	% Print the user key commands
+	iips_PrintKeyCommands();
+	
 	%% Start nested functions:
 	
 	function [iips_State] = iips_IntializeWithFigure(fig_h, ax_h)
@@ -131,6 +134,8 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 		end
 	end
 	
+	
+
 	%%
 	%% Action Handler Functions: 
 	
@@ -182,6 +187,9 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 					disp('Failed to load iips_LoadedSelectionOutput from workspace!')
 				end
 				
+			elseif strcmp(eventData.Key, 'f1')
+				iips_PrintKeyCommands();
+			
 			else 
 				if iips_Config.debugDetail > 7
 					fprintf('Unhandled key pressed: %s\n', eventData.Key)
@@ -234,8 +242,14 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 	function currHoveredPoint = iips_GetCurrentHoveredMouseLocation()
 		% currHoveredPoint: [pixel_x, pixel_y] if valid, or [] if not.
 		C = iips_State.curr_axes.CurrentPoint;
+		% C: [214.447190250508, -9.66113744075824, 4098.01171301401;
+		% 214.447190250508, -9.66113744075824, 0]
 		
-		if (C(1,1) < 1) || (C(1,2) < 1)
+		is_outside_image_width = (C(1,1) > iips_State.curr_image_size(2));
+		is_outside_image_height = (C(1,2) > iips_State.curr_image_size(1));
+		is_point_position_negative = (C(1,1) < 1) || (C(1,2) < 1);
+		
+		if (is_point_position_negative || is_outside_image_width || is_outside_image_height)
 			% if either point is negative, stop tracking and return
 			iips_State.isMouseBeingPressed = false;
 			iips_State.curr_figure.WindowButtonMotionFcn = '';
@@ -294,19 +308,45 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 
 	%%
 	%% Internal Functions: 
-	
+
+	% Prints the static list of key commands
+	function iips_PrintKeyCommands()
+		fprintf([' Available Key Commands: %s \n',...
+				'\t [F1]: print this menu\n',...
+				'\t [Esc]: exit this mode\n',...
+				'\t [Spacebar]: toggle between paint and erase modes.\n',...
+				'\t [x]: export the selected region\n',...
+				'\t [.]: reset the selection (start a new selection). The user is prompted first\n',...
+				'\t [l]: list current selection groups\n'], '')
+	end
+
 	% Toggles between paint and erase mode:
 	% TODO: set the cursor appropriately using "object.Pointer = 'circle';"
 	function iips_toggleBrushMode()
 		if strcmp(iips_Config.brush_mode,'paint')
 			disp('Switched to Erase mode')
 			iips_Config.brush_mode = 'erase'; % 'paint', 'erase'
+			
 		elseif strcmp(iips_Config.brush_mode,'erase')
 			disp('Switched to Paint mode')
 			iips_Config.brush_mode = 'paint'; % 'paint', 'erase'
 		else
 			error('Invalid iips_Config.brush_mode')
 		end
+		iips_updatePointer()
+	end
+
+	function iips_updatePointer()
+		if strcmp(iips_Config.brush_mode,'paint')
+			switchfigptr('add', iips_State.curr_figure)
+			
+		elseif strcmp(iips_Config.brush_mode,'erase')
+			switchfigptr('eraser', iips_State.curr_figure)
+% 			swtichfigptr % Restore the previous
+		else
+			error('Invalid iips_Config.brush_mode')
+		end
+		
 	end
 
 	% Performs a complete reset of the selection.
