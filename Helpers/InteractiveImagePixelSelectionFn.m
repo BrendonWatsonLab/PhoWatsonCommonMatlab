@@ -9,14 +9,14 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 		% [l]: list current selection groups
 
 		
-		
+	iips_Config.debugDetail = 10; % A value in the range 0-10, where 0 represents no debug information displayed and 10 represents extremely verboose debug information displayed
 	iips_Config.brush_size = 2;
 	iips_Config.brush_mode = 'paint'; % 'paint', 'erase'
 	iips_Config.update_mode = 'Additive'; % 'Toggle', 'OR', 'Replace', 'Additive'
 	iips_Config.overlayAlpha = 0.4;
 	
 	% Intialization of the iips_State variable
-% 	if ~exist('iips_State', 'var')
+
 		% Create new state:
 		[iips_State] = iips_IntializeWithFigure();
 		
@@ -73,8 +73,6 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 		set(iips_State.curr_figure, 'WindowKeyPressFcn', []);
 		set(iips_State.curr_figure, 'KeyPressFcn', @iips_KeyPressFcn);
 
-% 	end
-	
 	% Get initial selection output
 	iips_GetExportSelectionFcn();
 		
@@ -184,6 +182,10 @@ function [iips_Config, iips_State] = InteractiveImagePixelSelectionFn(desiredSel
 					disp('Failed to load iips_LoadedSelectionOutput from workspace!')
 				end
 				
+			else 
+				if iips_Config.debugDetail > 7
+					fprintf('Unhandled key pressed: %s\n', eventData.Key)
+				end
 			end
 		end
 	end
