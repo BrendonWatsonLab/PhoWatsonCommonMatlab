@@ -4,7 +4,7 @@
 % Needs to be manually updated when new folders are added.
 
 addpath('Helpers');
-helperNamesGenPath = {'Parsing', 'Filesystem', 'Export', 'MatlabMeta', 'Dual-Cursors', ...
+helperNamesGenPath = {'General', 'Parsing', 'Filesystem', 'Export', 'MatlabMeta', 'Dual-Cursors', ...
     'UX', 'UserAnnotationsManager', 'ComputerVision', 'Plotting', 'Naming'};
 helperNames = {'DateTime', ['DateTime/datestr8601']};
 
