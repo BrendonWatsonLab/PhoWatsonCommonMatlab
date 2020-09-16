@@ -90,20 +90,6 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 	
 	% Current index: i
 	pisInfo.curr_i = 1;
-
-% 	pisConfig.additionalDisplayData.mainPlotAxesHandle = plot(x_cells{pisInfo.curr_i}, y_cells{pisInfo.curr_i},'Tag','plotInteractiveSliderMainPlotHandle');
-% 	%% Add Additional Plot Info:
-% 	xlim([pisInfo.lim(1),pisInfo.lim(2)]);
-% 	ylim([pisInfo.lim(3),pisInfo.lim(4)]);
-% 	if isfield(pisConfig, 'xlabel')
-% 		xlabel(pisConfig.xlabel{pisInfo.curr_i});
-% 	end
-% 	if isfield(pisConfig, 'ylabel')
-% 		ylabel(pisConfig.ylabel{pisInfo.curr_i});
-% 	end
-% 	if isfield(pisConfig, 'title')
-% 		title(pisConfig.title{pisInfo.curr_i});
-% 	end
 	
 	update_plots(pisInfo.curr_i);
 	
