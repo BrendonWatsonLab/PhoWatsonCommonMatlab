@@ -25,8 +25,7 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 	
 	
 	% pisInfo: plotInteractiveSliderInfo:
-	[pisInfo.lim] = fnFindSeriesBounds(x_cells, y_cells, false);
-
+	
 	if ~exist('extant_fig','var')
 		% create a new figure
 		FigH = figure;
@@ -37,10 +36,22 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 
 	pisInfo.NumberOfSeries = length(x_cells);
 	if (length(y_cells) ~= pisInfo.NumberOfSeries)
-		error('x_cells and y_cells should be cell arrays of the same length. This corresponds to the x_cells{i}, y_cells{i} is the series that will be plotted when the slider is set to i.')
+		if (length(y_cells{1}) ~= pisInfo.NumberOfSeries)
+			% Check and see if its a multi-data series by checking the
+			% first item and seeing if it's a
+			error('x_cells and y_cells should be cell arrays of the same length. This corresponds to the x_cells{i}, y_cells{i} is the series that will be plotted when the slider is set to i.')
+		end
 	end
 	
 	if exist('seriesConfigs','var')
+		
+		if isfield(seriesConfigs, 'lim')
+			[pisInfo.lim] = seriesConfigs.lim; % Use the version passed in.
+		else
+			[pisInfo.lim] = fnFindSeriesBounds(x_cells, y_cells, false);
+		end
+		
+		
 		if isfield(seriesConfigs, 'xlabel')
 			if ischar(seriesConfigs.xlabel) % If it's a simple char string
 				% Repeat the label for each series
@@ -85,6 +96,21 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 				error('Unknown type for: title')	
 			end
 		end
+
+		if isfield(seriesConfigs, 'legend')
+			if iscellstr(seriesConfigs.legend) % If it's a non-nested cell array
+				% Repeat the cell array of legend strings for each series (making a cell array of cell arrays)
+				pisConfig.legend = cell(1, pisInfo.NumberOfSeries);
+				pisConfig.legend(:) = {seriesConfigs.legend};
+			elseif iscell(seriesConfigs.legend) % if it's a cell array. Note: Assumes correct length
+				if (length(seriesConfigs.legend) ~= pisInfo.NumberOfSeries)
+					error('Wrong length!')
+				end
+				pisConfig.legend = seriesConfigs.legend;
+			else
+				error('Unknown type for: legend')	
+			end
+		end
 	
 	end
 	
@@ -92,7 +118,6 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 	pisInfo.curr_i = 1;
 	
 	update_plots(pisInfo.curr_i);
-	
 	
 	%% Slider:
     % Gets the slider position from the figure
@@ -128,7 +153,23 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 
 	function update_plots(curr_i)
 		% Update the plot:
-		pisConfig.additionalDisplayData.mainPlotAxesHandle = plot(x_cells{curr_i}, y_cells{curr_i},'Tag','plotInteractiveSliderMainPlotHandle');
+		% Enable Nested Cell Arrays:
+		y_data = y_cells{curr_i};
+
+		% Make a single-element cell array if the y_data is only a single series
+		if ~iscell(y_data)
+			y_data = {y_data}; % Make a single-element cell array
+		end
+		
+		% Loop through the subseries (if there are any) and plot them with hold
+		% on.
+		numSubSeries = length(y_data);
+		hold off
+		for j = 1:numSubSeries
+			pisConfig.additionalDisplayData.mainPlotAxesHandle = plot(x_cells{curr_i}, y_data{j},'Tag','plotInteractiveSliderMainPlotHandle');
+			hold on
+		end
+		% Do common plotting:
 		xlim([pisInfo.lim(1),pisInfo.lim(2)]);
 		ylim([pisInfo.lim(3),pisInfo.lim(4)]);
 		if isfield(pisConfig, 'xlabel')
@@ -139,6 +180,9 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 		end
 		if isfield(pisConfig, 'title')
 			title(pisConfig.title{pisInfo.curr_i});
+		end
+		if isfield(pisConfig, 'legend')
+			legend(pisConfig.legend{pisInfo.curr_i});
 		end
 		
 	end
