@@ -1,5 +1,5 @@
 %% Requires a two cell arrays: x_cells, y_cells
-function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesConfigs)
+function [FigH, pis] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesConfigs)
 %FNPLOTINTERACTIVESLIDER figure with an interactive slider that allows you
 	% to scroll through multiple series (x vector, y vector pairs) that will be
 	% plotted on the plot.
@@ -115,8 +115,9 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 	end
 	
 	% Current index: i
-	pisInfo.curr_i = 1;
-	
+	setappdata(FigH,'curr_i',1); % Set the app data to the initial value:
+	pisInfo.curr_i = getappdata(FigH,'curr_i'); % Set the pisInfo.curr_i value from the app data.
+	% Update the plots initially.
 	update_plots(pisInfo.curr_i);
 	
 	%% Slider:
@@ -132,13 +133,13 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 	pisSettings.steps = [1/theRange, 10/theRange];
 
     % svp.Slider = uicontrol(svp.Figure,'Style','slider',...
-    svp.Slider = uicontrol(FigH,'Style','slider',...
+    pis.Slider = uicontrol(FigH,'Style','slider',...
                     'Min',1,'Max',pisInfo.NumberOfSeries,'Value',pisInfo.curr_i,...
 					'SliderStep',pisSettings.steps,...
                     'Position', [pisSettings.sliderX,pisSettings.sliderY,pisSettings.sliderWidth,pisSettings.sliderHeight]);
 
-    svp.Slider.Units = "normalized"; %Change slider units to normalized so that it scales with the video window.
-    addlistener(svp.Slider, 'Value', 'PostSet', @slider_post_update_function);
+    pis.Slider.Units = "normalized"; %Change slider units to normalized so that it scales with the video window.
+    addlistener(pis.Slider, 'Value', 'PostSet', @slider_post_update_function);
 
 	%% Slider callback function:
 	function slider_post_update_function(~, event_obj)
@@ -147,8 +148,10 @@ function [FigH] = fnPlotInteractiveSlider(x_cells, y_cells, extant_fig, seriesCo
 
         % get the current index from the slider
         pisInfo.curr_i = round(event_obj.AffectedObject.Value);
+		% Update the app data:
+		setappdata(FigH,'curr_i',pisInfo.curr_i);
+		% Update the plots now:
 		update_plots(pisInfo.curr_i);
-		
 	end
 
 	function update_plots(curr_i)
