@@ -11,7 +11,7 @@ function [export_result] = fnSaveFigureForExport(fig_h, figPath, should_export_f
 		should_export_png = false;
 	end
 	if ~exist('should_export_eps','var')
-		should_export_eps = true;
+		should_export_eps = false;
 	end
 	if ~exist('should_export_pdf','var')
 		should_export_pdf = true;
