@@ -15,10 +15,9 @@ function [export_result] = fnSaveFigureForExport(fig_h, figPath, should_export_f
 	end
 	if ~exist('should_export_pdf','var')
 		should_export_pdf = true;
-		enable_vector_pdf_output = false; % Explicitly enable vector PDF output if that's desired. It's very slow
 	end
+	enable_vector_pdf_output = false; % Explicitly enable vector PDF output if that's desired. It's very slow
 	
-
 	% Perform requested exports
 	if should_export_fig
 		export_result.fig = [figPath '.fig'];
